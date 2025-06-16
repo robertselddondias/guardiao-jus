@@ -18,104 +18,171 @@ class PaymentListScreen extends StatelessWidget {
     final verticalSpacing = screenWidth > 600 ? 24.0 : 16.0;
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(
-          'Pagamentos',
-          style: theme.textTheme.headlineSmall?.copyWith(
-            color: theme.colorScheme.onPrimary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: const Text('Pagamentos'),
         backgroundColor: theme.colorScheme.primary,
+        foregroundColor: Colors.white,
         centerTitle: true,
-        elevation: 4,
+        elevation: 0,
       ),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalSpacing),
-          child: Column(
-            children: [
-              // Lista de Pagamentos
-              Expanded(
-                child: Obx(() {
-                  if (controller.isLoading.value) {
-                    return Center(
-                      child: CircularProgressIndicator(color: theme.colorScheme.primary),
-                    );
-                  }
+          child: Obx(() {
+            if (controller.isLoading.value) {
+              return Center(
+                child: CircularProgressIndicator(color: theme.colorScheme.primary),
+              );
+            }
 
-                  if (controller.payments.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.receipt_long, size: screenWidth > 600 ? 100 : 64, color: theme.colorScheme.onSurface.withOpacity(0.5)),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Nenhum pagamento encontrado',
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(0.7),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+            if (controller.payments.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.receipt_long,
+                      size: screenWidth > 600 ? 100 : 64,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Nenhum pagamento encontrado',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[600],
                       ),
-                    );
-                  }
+                    ),
+                  ],
+                ),
+              );
+            }
 
-                  return ListView.builder(
-                    itemCount: controller.payments.length,
-                    itemBuilder: (context, index) {
-                      PaymentGatewayTransactionModel payment = controller.payments[index];
-                      final statusColor = payment.status == 'paid'
-                          ? Colors.green
-                          : theme.colorScheme.error;
+            return ListView.builder(
+              itemCount: controller.payments.length,
+              itemBuilder: (context, index) {
+                PaymentGatewayTransactionModel payment = controller.payments[index];
+                final statusColor = payment.status == 'paid'
+                    ? Colors.green
+                    : Colors.red;
 
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 2,
-                        child: ListTile(
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: screenWidth > 600 ? 24 : 16,
-                            vertical: screenWidth > 600 ? 16 : 8,
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: statusColor.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: screenWidth > 600 ? 24 : 16,
+                      vertical: screenWidth > 600 ? 16 : 12,
+                    ),
+                    child: Row(
+                      children: [
+                        // Ícone do pagamento
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          leading: CircleAvatar(
-                            backgroundColor: theme.colorScheme.primary.withOpacity(0.2),
-                            child: Icon(Icons.payment, color: theme.colorScheme.primary),
+                          child: Icon(
+                            Icons.payment,
+                            color: theme.colorScheme.primary,
+                            size: 24,
                           ),
-                          title: Text(
-                            'Pagamento Mensalidade',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'Data: ${DateFormat("dd/MM/yyyy").format(payment.createdAt!)}\nStatus: ${payment.status == 'paid' ? 'Pago' : 'Atrasado'}',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(0.6),
-                            ),
-                          ),
-                          trailing: Icon(Icons.circle, color: statusColor, size: 16),
-                          // onTap: () {
-                          //   Get.snackbar(
-                          //     'Detalhes do Pagamento',
-                          //     'Título: ${payment['title']}\nStatus: ${payment['status']}\nValor: R\$ ${payment['amount']}',
-                          //     snackPosition: SnackPosition.BOTTOM,
-                          //     backgroundColor: theme.colorScheme.surface,
-                          //     colorText: theme.colorScheme.onSurface,
-                          //   );
-                          // },
                         ),
-                      );
-                    },
-                  );
-                }),
-              ),
-            ],
-          ),
+                        const SizedBox(width: 16),
+
+                        // Informações do pagamento
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Título
+                              Text(
+                                'Pagamento Mensalidade',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+
+                              // Data
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today,
+                                    size: 14,
+                                    color: Colors.grey[500],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Data: ${DateFormat("dd/MM/yyyy").format(payment.createdAt!)}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+
+                              // Status
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  payment.status == 'paid' ? 'Pago' : 'Atrasado',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: statusColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Indicador de status
+                        Container(
+                          width: 12,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: statusColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          }),
         ),
       ),
     );
