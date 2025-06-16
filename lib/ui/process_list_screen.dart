@@ -61,7 +61,7 @@ class ProcessListScreen extends StatelessWidget {
   Widget _buildProcessCard(BuildContext context, ProcessoModel process,
       ProcessListController controller, ThemeData theme, Size size) {
 
-    final statusColor = process.status?.color ?? theme.colorScheme.primary;
+    final statusColor = process.status.color ?? theme.colorScheme.primary;
     final processIcon = _getProcessIcon(process);
     final processType = _getProcessTypeLabel(process);
 
@@ -169,27 +169,27 @@ class ProcessListScreen extends StatelessWidget {
                           ),
 
                           // Status se houver
-                          if (process.status != null) ...[
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: statusColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                process.status!.label,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: statusColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                          ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: statusColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              process.status.label,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: statusColor,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ],
+                          ),
+                        ],
                         ],
                       ),
                     ),

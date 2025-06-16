@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
@@ -12,7 +11,6 @@ import 'package:get/get.dart';
 import 'package:guardiao_cliente/controllers/global_setting_controller.dart';
 import 'package:guardiao_cliente/controllers/theme_controller.dart';
 import 'package:guardiao_cliente/firebase_options.dart';
-import 'package:guardiao_cliente/repositories/entidade_militar_repository.dart';
 import 'package:guardiao_cliente/services/localization_service.dart';
 import 'package:guardiao_cliente/themes/app_theme.dart';
 import 'package:guardiao_cliente/ui/splash_screen.dart';

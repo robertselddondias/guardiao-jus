@@ -114,7 +114,7 @@ class OtpScreen extends StatelessWidget {
                     horizontal: screenWidth * 0.04,
                   ),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.background,
+                    color: theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
@@ -149,7 +149,7 @@ class OtpScreen extends StatelessWidget {
                           fieldWidth: screenWidth * 0.11,
                           activeFillColor: theme.colorScheme.primaryContainer.withOpacity(0.2),
                           selectedFillColor: theme.colorScheme.primaryContainer.withOpacity(0.4),
-                          inactiveFillColor: theme.colorScheme.surfaceVariant,
+                          inactiveFillColor: theme.colorScheme.surfaceContainerHighest,
                           activeColor: primaryColor,
                           selectedColor: secondaryColor,
                           inactiveColor: theme.colorScheme.outline.withOpacity(0.3),
