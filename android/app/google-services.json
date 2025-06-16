@@ -1,0 +1,114 @@
+{
+  "project_info": {
+    "project_number": "953138134771",
+    "project_id": "guardiao-jus",
+    "storage_bucket": "guardiao-jus.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:953138134771:android:1d03697191b2705af30186",
+        "android_client_info": {
+          "package_name": "com.selddon.guardiao.advogado"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "953138134771-euqsrneveekk0fpkne6779c6bbki78nv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.selddon.guardiao.advogado",
+            "certificate_hash": "1c5e9ef94288b78845dd0c29b8eabcbe9b51d73b"
+          }
+        },
+        {
+          "client_id": "953138134771-u5661jiucb83ggppb6q76vrdpjk37qrv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.selddon.guardiao.advogado",
+            "certificate_hash": "57ae44e0d50864d10e57b31940c8b5978fd2cfe2"
+          }
+        },
+        {
+          "client_id": "953138134771-dd62bol42b5v74qddqc7cofcf95l131f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_ZBWZrKkWn8Bw8tLaXm50yYLCcc8xxKs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "953138134771-dd62bol42b5v74qddqc7cofcf95l131f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "953138134771-2g3ht06so0bf4ju9kr3ck77rfaurumj6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.selddon.guardiao.advogado"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:953138134771:android:12fa8c48bd3e72d7f30186",
+        "android_client_info": {
+          "package_name": "com.selddon.guardiao.cliente"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "953138134771-nffogugnfv0a2o17q57pcak9g3b5am76.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.selddon.guardiao.cliente",
+            "certificate_hash": "57ae44e0d50864d10e57b31940c8b5978fd2cfe2"
+          }
+        },
+        {
+          "client_id": "953138134771-vs6r96es6s70qu2te8i8b5s4uqe644ca.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.selddon.guardiao.cliente",
+            "certificate_hash": "1c5e9ef94288b78845dd0c29b8eabcbe9b51d73b"
+          }
+        },
+        {
+          "client_id": "953138134771-dd62bol42b5v74qddqc7cofcf95l131f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_ZBWZrKkWn8Bw8tLaXm50yYLCcc8xxKs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "953138134771-dd62bol42b5v74qddqc7cofcf95l131f.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "953138134771-2g3ht06so0bf4ju9kr3ck77rfaurumj6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.selddon.guardiao.advogado"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
