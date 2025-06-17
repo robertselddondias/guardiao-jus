@@ -10,8 +10,21 @@ import 'package:guardiao_cliente/ui/process_detail_screen.dart';
 import 'package:guardiao_cliente/utils/date_utils_custom.dart';
 import 'package:guardiao_cliente/widgets/loading_indicator.dart';
 
-class ProcessListScreen extends StatelessWidget {
+class ProcessListScreen extends StatefulWidget {
   const ProcessListScreen({super.key});
+
+  @override
+  State<ProcessListScreen> createState() => _ProcessListScreenState();
+}
+
+class _ProcessListScreenState extends State<ProcessListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,45 +60,12 @@ class ProcessListScreen extends StatelessWidget {
 
           return Column(
             children: [
-              // Barra de pesquisa
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  onChanged: (value) {
-                    // Por enquanto só visual, funcionalidade pode ser adicionada depois
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Pesquisar por título ou número...',
-                    hintStyle: TextStyle(color: Colors.grey[500]),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey[500]),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
+              // Barra de pesquisa moderna mas seguindo padrão
+              _buildSearchBar(controller, theme),
 
               // Lista de processos
               Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  itemCount: controller.processos.length,
-                  itemBuilder: (context, index) {
-                    final process = controller.processos[index];
-                    return _buildProcessCard(context, process, controller, theme, size);
-                  },
-                ),
+                child: _buildProcessList(controller, theme, size),
               ),
             ],
           );
@@ -100,9 +80,94 @@ class ProcessListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProcessCard(BuildContext context, ProcessoModel process,
-      ProcessListController controller, ThemeData theme, Size size) {
+  Widget _buildSearchBar(ProcessListController controller, ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: Colors.grey[200]!,
+          width: 1,
+        ),
+      ),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (value) {
+          controller.filterProcesses(value);
+        },
+        decoration: InputDecoration(
+          hintText: 'Pesquisar por título ou número...',
+          hintStyle: TextStyle(
+            color: Colors.grey[500],
+            fontSize: 15,
+          ),
+          prefixIcon: Icon(
+            Icons.search,
+            color: theme.colorScheme.primary,
+            size: 22,
+          ),
+          suffixIcon: _searchController.text.isNotEmpty
+              ? IconButton(
+            icon: Icon(
+              Icons.clear,
+              color: Colors.grey[400],
+              size: 20,
+            ),
+            onPressed: () {
+              _searchController.clear();
+              controller.filterProcesses('');
+            },
+          )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        ),
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
 
+  Widget _buildProcessList(ProcessListController controller, ThemeData theme, Size size) {
+    return Obx(() {
+      // Use filteredProcessos if search is active, otherwise use processos
+      final processesToShow = _searchController.text.isNotEmpty
+          ? controller.filteredProcessos
+          : controller.processos;
+
+      if (_searchController.text.isNotEmpty && controller.filteredProcessos.isEmpty) {
+        return _buildNoResultsState(theme);
+      }
+
+      return ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        itemCount: processesToShow.length,
+        itemBuilder: (context, index) {
+          final process = processesToShow[index];
+          return _buildProcessCard(context, process, controller, theme, size);
+        },
+      );
+    });
+  }
+
+  Widget _buildProcessCard(
+      BuildContext context,
+      ProcessoModel process,
+      ProcessListController controller,
+      ThemeData theme,
+      Size size,
+      ) {
     final statusColor = process.status.color;
     final processIcon = _getProcessIcon(process);
     final processType = _getProcessTypeLabel(process);
@@ -116,91 +181,65 @@ class ProcessListScreen extends StatelessWidget {
         confirmDismiss: (direction) async {
           return await _confirmDelete(context, controller, process.id!);
         },
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-            border: Border.all(
-              color: statusColor.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
+        onDismissed: (direction) {
+          controller.deleteProcess(process.id!);
+        },
+        child: GestureDetector(
+          onTap: () => _navigateToProcess(process),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              onTap: () => _navigateToProcess(process),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
+              border: Border.all(
+                color: Colors.grey[200]!,
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
                   children: [
-                    // Ícone do processo
+                    // Ícone
                     Container(
-                      width: 50,
-                      height: 50,
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(
                         processIcon,
                         color: statusColor,
-                        size: 24,
+                        size: 22,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
 
-                    // Informações do processo
+                    // Informações principais
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Título/Número do processo com badge se necessário
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  process.isNew
-                                      ? (process.title ?? 'Processo sem título')
-                                      : (process.numeroProcesso ?? 'Número não informado'),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[800],
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              // Badge para processos que não são novos
-                              if (!process.isNew)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.secondary,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    'Existente',
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                            ],
+                          // Título
+                          Text(
+                            process.title ?? 'Sem título',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[800],
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
 
@@ -208,46 +247,128 @@ class ProcessListScreen extends StatelessWidget {
                           Text(
                             processType,
                             style: TextStyle(
-                              fontSize: 12,
-                              color: statusColor,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[600],
                             ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Data de criação
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_today,
-                                size: 14,
-                                color: Colors.grey[500],
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                process.createAt.isNotEmpty
-                                    ? 'Criado em: ${DateUtilsCustom.formatDate(process.createAt)}'
-                                    : 'Data não informada',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
                           ),
                         ],
                       ),
                     ),
 
-                    // Seta de navegação
-                    Icon(
-                      Icons.chevron_right,
-                      color: Colors.grey[400],
-                      size: 20,
+                    // Status badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        process.status.label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ),
+
+                const SizedBox(height: 12),
+
+                // Footer
+                Column(
+                  children: [
+                    // Primeira linha: Data de criação
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.schedule,
+                          size: 16,
+                          color: Colors.grey[500],
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          DateUtilsCustom.formatDate(process.createAt),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const Spacer(),
+                        // Ícone de ação
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Colors.grey[400],
+                        ),
+                      ],
+                    ),
+
+                    // Segunda linha: Número do processo (se existir)
+                    if (process.numeroProcesso != null &&
+                        process.numeroProcesso!.isNotEmpty &&
+                        process.numeroProcesso!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.numbers,
+                            size: 16,
+                            color: Colors.grey[500],
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: Colors.grey[300]!,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                'Nº: ${process.numeroProcesso!}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[700],
+                                  fontFamily: 'monospace',
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+
+                    // Debug info - remover após teste
+                    if (process.numeroProcesso != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Debug: numeroProcesso = "${process.numeroProcesso}" (length: ${process.numeroProcesso?.length ?? 0})',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.red[400],
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -255,152 +376,200 @@ class ProcessListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme, Size size) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(height: size.height * 0.1),
-
-            // Ícone animado
-            TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 800),
-              tween: Tween(begin: 0.0, end: 1.0),
-              curve: Curves.elasticOut,
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: value,
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.colorScheme.primary.withOpacity(0.1),
-                          theme.colorScheme.primary.withOpacity(0.05),
-                        ],
-                      ),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.folder_open,
-                      size: 48,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 20),
-
-            // Título estilizado
-            Text(
-              "Nenhuma solicitação encontrada",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[800],
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-
-            // Descrição principal
-            Text(
-              "Aqui você pode visualizar e gerenciar todas as suas solicitações jurídicas. Crie processos administrativos e judiciais para acompanhar seus casos.",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-
-            // Segunda parte do texto
-            Text(
-              "Toque no botão + para criar sua primeira solicitação.",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-
-            // Card informativo sobre tipos
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+  Widget _buildDeleteBackground(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.red,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Align(
+        alignment: Alignment.centerRight,
+        child: Padding(
+          padding: EdgeInsets.only(right: 20),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.delete,
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-                border: Border.all(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
-                  width: 1,
+                size: 24,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Excluir',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: theme.colorScheme.primary,
-                        size: 24,
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        "Tipos de Solicitação",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  _buildInfoType(
-                    theme,
-                    Icons.admin_panel_settings,
-                    "Procedimento Administrativo",
-                    "Para questões internas, sindicâncias e recursos administrativos dentro da corporação",
-                    theme.colorScheme.secondary,
-                  ),
-                  const SizedBox(height: 12),
-
-                  _buildInfoType(
-                    theme,
-                    Icons.gavel,
-                    "Processo Judicial",
-                    "Para ações movidas no Judiciário, garantir direitos ou contestar decisões legais",
-                    theme.colorScheme.primary,
-                  ),
-                  const SizedBox(height: 12),
-
-                  _buildInfoType(
-                    theme,
-                    Icons.description,
-                    "Processo Existente",
-                    "Para vincular e acompanhar processos que já estão em andamento no sistema judicial",
-                    theme.colorScheme.tertiary,
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildNoResultsState(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(40),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Nenhum resultado encontrado',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Tente buscar por outros termos',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(ThemeData theme, Size size) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 40),
+
+          // Ícone
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.description_outlined,
+              size: 64,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          Text(
+            "Bem-vindo ao seu\ncentro de controle",
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 12),
+
+          Text(
+            "Crie processos administrativos e judiciais para acompanhar seus casos.",
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+              height: 1.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+
+          Text(
+            "Toque no botão + para criar sua primeira solicitação.",
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+
+          // Card informativo
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.grey[200]!,
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: theme.colorScheme.primary,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      "Tipos de Solicitação",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                _buildInfoType(
+                  theme,
+                  Icons.admin_panel_settings,
+                  "Procedimento Administrativo",
+                  "Para questões internas, sindicâncias e recursos administrativos dentro da corporação",
+                  theme.colorScheme.secondary,
+                ),
+                const SizedBox(height: 12),
+
+                _buildInfoType(
+                  theme,
+                  Icons.gavel,
+                  "Processo Judicial",
+                  "Para ações movidas no Judiciário, garantir direitos ou contestar decisões legais",
+                  theme.colorScheme.primary,
+                ),
+                const SizedBox(height: 12),
+
+                _buildInfoType(
+                  theme,
+                  Icons.description,
+                  "Processo Existente",
+                  "Para vincular e acompanhar processos que já estão em andamento no sistema judicial",
+                  theme.colorScheme.tertiary,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -450,37 +619,6 @@ class ProcessListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDeleteBackground(ThemeData theme) {
-    return Container(
-      alignment: Alignment.centerRight,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.only(right: 20),
-      decoration: BoxDecoration(
-        color: Colors.red,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.delete,
-            color: Colors.white,
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Excluir',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   IconData _getProcessIcon(ProcessoModel process) {
     if (process.isNew && process.type == PedidoType.PROCEDIMENTO_ADMINISTRATIVO) {
       return Icons.admin_panel_settings;
@@ -527,29 +665,28 @@ class ProcessListScreen extends StatelessWidget {
             ),
           ),
           content: Text(
-            'Tem certeza de que deseja excluir esta solicitação?',
-            style: TextStyle(color: Colors.grey[600]),
+            'Tem certeza de que deseja excluir esta solicitação? Esta ação não pode ser desfeita.',
+            style: TextStyle(
+              color: Colors.grey[600],
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-                controller.deleteProcess(processId);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(
+                  color: Colors.grey[600],
                 ),
               ),
-              child: const Text(
-                'Excluir',
-                style: TextStyle(color: Colors.white),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
               ),
+              child: const Text('Excluir'),
             ),
           ],
         );
@@ -558,48 +695,29 @@ class ProcessListScreen extends StatelessWidget {
   }
 
   void _showHelpDialog(BuildContext context, ThemeData theme) {
-    showGeneralDialog(
+    showDialog(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: '',
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, anim1, anim2) {
-        return const SizedBox.shrink();
-      },
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return ScaleTransition(
-          scale: CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutBack,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-          child: Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 500),
-              padding: const EdgeInsets.all(24),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 500),
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Header com ícone
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.help_outline,
-                      size: 40,
-                      color: theme.colorScheme.primary,
-                    ),
+                  Icon(
+                    Icons.help_center,
+                    size: 48,
+                    color: theme.colorScheme.primary,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  // Título
                   Text(
-                    "Como funciona o sistema de solicitações?",
+                    "Como usar o sistema",
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -607,9 +725,8 @@ class ProcessListScreen extends StatelessWidget {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  // Explicação geral
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -628,7 +745,6 @@ class ProcessListScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Tipos de solicitação
                   _buildHelpSection(
                     theme,
                     Icons.admin_panel_settings,
@@ -651,16 +767,16 @@ class ProcessListScreen extends StatelessWidget {
                     "Número de Processo Existente",
                     "Caso já possua um número de processo em andamento, você pode vinculá-lo ao sistema para acompanhamento e atualizações.",
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
                   // Dicas de uso
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.secondary.withOpacity(0.1),
+                      color: theme.colorScheme.primary.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: theme.colorScheme.secondary.withOpacity(0.3),
+                        color: theme.colorScheme.primary.withOpacity(0.1),
                         width: 1,
                       ),
                     ),
@@ -670,17 +786,17 @@ class ProcessListScreen extends StatelessWidget {
                         Row(
                           children: [
                             Icon(
-                              Icons.lightbulb_outline,
-                              color: theme.colorScheme.secondary,
+                              Icons.lightbulb,
+                              color: theme.colorScheme.primary,
                               size: 20,
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              "Dicas de uso:",
+                              "Dicas de uso",
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: theme.colorScheme.secondary,
+                                color: theme.colorScheme.primary,
                               ),
                             ),
                           ],
