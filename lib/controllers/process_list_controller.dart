@@ -9,6 +9,8 @@ class ProcessListController extends GetxController {
   RxList<ProcessoModel> processos = <ProcessoModel>[].obs;
   RxBool isLoading = false.obs;
 
+  RxList<ProcessoModel> filteredProcessos = <ProcessoModel>[].obs;
+
   @override
   void onInit() {
     super.onInit();
@@ -40,6 +42,17 @@ class ProcessListController extends GetxController {
       SnackbarCustom.showError("Erro ao excluir processo: $e");
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  void filterProcesses(String query) {
+    if (query.isEmpty) {
+      filteredProcessos.value = processos;
+    } else {
+      filteredProcessos.value = processos.where((process) {
+        return (process.title?.toLowerCase().contains(query.toLowerCase()) ?? false) ||
+            (process.numeroProcesso?.toLowerCase().contains(query.toLowerCase()) ?? false);
+      }).toList();
     }
   }
 }
