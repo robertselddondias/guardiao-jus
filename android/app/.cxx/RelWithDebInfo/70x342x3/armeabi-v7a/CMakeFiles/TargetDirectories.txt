@@ -1,0 +1,2 @@
+/Volumes/Dados/projetos/guardiao-estrutura/guardiao-cliente/android/app/.cxx/RelWithDebInfo/70x342x3/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Volumes/Dados/projetos/guardiao-estrutura/guardiao-cliente/android/app/.cxx/RelWithDebInfo/70x342x3/armeabi-v7a/CMakeFiles/rebuild_cache.dir

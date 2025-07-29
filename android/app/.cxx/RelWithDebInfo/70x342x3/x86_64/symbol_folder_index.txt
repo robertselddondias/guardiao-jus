@@ -1,0 +1,1 @@
+/Volumes/Dados/projetos/guardiao-estrutura/guardiao-cliente/build/app/intermediates/cxx/RelWithDebInfo/70x342x3/obj/x86_64

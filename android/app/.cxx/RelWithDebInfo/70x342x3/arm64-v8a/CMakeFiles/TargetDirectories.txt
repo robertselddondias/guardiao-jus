@@ -1,0 +1,2 @@
+/Volumes/Dados/projetos/guardiao-estrutura/guardiao-cliente/android/app/.cxx/RelWithDebInfo/70x342x3/arm64-v8a/CMakeFiles/edit_cache.dir
+/Volumes/Dados/projetos/guardiao-estrutura/guardiao-cliente/android/app/.cxx/RelWithDebInfo/70x342x3/arm64-v8a/CMakeFiles/rebuild_cache.dir
