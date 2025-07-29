@@ -30,6 +30,7 @@ void main() async {
     TextInput.ensureInitialized();
   }
 
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

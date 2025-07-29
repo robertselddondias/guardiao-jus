@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:guardiao_cliente/controllers/informativo_controller.dart';
 import 'package:guardiao_cliente/models/company_model.dart';
 import 'package:guardiao_cliente/models/user_model.dart';
 import 'package:guardiao_cliente/repositories/company_repository.dart';
@@ -25,6 +26,8 @@ class HomeController extends GetxController {
   final UserRepository _userRepository = UserRepository();
   final CompanyRepository _companyRepository = CompanyRepository();
   final NotificationRepository _notificationRepository = NotificationRepository();
+
+  final InformativoController informativoController = Get.put(InformativoController());
 
   final ScheduleRepository _scheduleRepository = ScheduleRepository();
 

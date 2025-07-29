@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:guardiao_cliente/controllers/home_controller.dart';
 import 'package:guardiao_cliente/ui/notification_screen.dart';
+import 'package:guardiao_cliente/widgets/banner_informativos.dart';
 
 class HomeScreen extends StatelessWidget {
   final HomeController controller = Get.put(HomeController());
@@ -21,7 +22,8 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildWelcomeSection(theme, size),
+            // _buildWelcomeSection(theme, size),
+            BannerInformativos(),
             _buildServicesSection(theme, size),
           ],
         ),
@@ -216,30 +218,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                 ],
-              ),
-              TextButton.icon(
-                onPressed: () {},
-                icon: Icon(
-                  Icons.apps_rounded,
-                  color: theme.colorScheme.primary,
-                  size: 16,
-                ),
-                label: Text(
-                  'Ver todos',
-                  style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                  ),
-                ),
-                style: TextButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                ),
-              ),
+              )
             ],
           ),
           const SizedBox(height: 16),
