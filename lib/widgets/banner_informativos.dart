@@ -1,10 +1,56 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:guardiao_cliente/controllers/informativo_controller.dart';
 import 'package:guardiao_cliente/models/informativo_model.dart';
 
-class BannerInformativos extends StatelessWidget {
+class BannerInformativos extends StatefulWidget {
   const BannerInformativos({super.key});
+
+  @override
+  State<BannerInformativos> createState() => _BannerInformativosState();
+}
+
+class _BannerInformativosState extends State<BannerInformativos> {
+  PageController? _pageController;
+  Timer? _autoScrollTimer;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.92);
+    _startAutoScroll();
+  }
+
+  @override
+  void dispose() {
+    _autoScrollTimer?.cancel();
+    _pageController?.dispose();
+    super.dispose();
+  }
+
+  void _startAutoScroll() {
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      final controller = Get.isRegistered<InformativoController>()
+          ? Get.find<InformativoController>()
+          : null;
+
+      if (controller != null &&
+          controller.informativosDestaque.isNotEmpty &&
+          _pageController != null &&
+          _pageController!.hasClients &&
+          mounted) {
+        final nextPage = (_currentPage + 1) % controller.informativosDestaque.length;
+        _pageController!.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+        _currentPage = nextPage;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +76,6 @@ class BannerInformativos extends StatelessWidget {
             // Container principal com gradiente sutil
             Container(
               decoration: BoxDecoration(
-
                 // borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
@@ -94,7 +139,6 @@ class BannerInformativos extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: theme.colorScheme.primary.withOpacity(0.2),
-                              width: 1,
                             ),
                           ),
                           child: Material(
@@ -103,26 +147,23 @@ class BannerInformativos extends StatelessWidget {
                               onTap: () => controller.navegarParaListaCompleta(),
                               borderRadius: BorderRadius.circular(12),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 8,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Text(
                                       'Ver todos',
                                       style: TextStyle(
-                                        color: theme.colorScheme.primary,
+                                        fontSize: 12,
                                         fontWeight: FontWeight.w600,
-                                        fontSize: 13,
+                                        color: theme.colorScheme.primary,
                                       ),
                                     ),
                                     const SizedBox(width: 4),
                                     Icon(
                                       Icons.arrow_forward_ios,
-                                      color: theme.colorScheme.primary,
                                       size: 12,
+                                      color: theme.colorScheme.primary,
                                     ),
                                   ],
                                 ),
@@ -139,7 +180,7 @@ class BannerInformativos extends StatelessWidget {
                     height: 160,
                     width: double.infinity,
                     child: PageView.builder(
-                      controller: PageController(viewportFraction: 0.92),
+                      controller: _pageController,
                       itemCount: controller.informativosDestaque.length,
                       itemBuilder: (context, index) {
                         final informativo = controller.informativosDestaque[index];

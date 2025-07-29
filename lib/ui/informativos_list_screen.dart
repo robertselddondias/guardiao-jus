@@ -13,40 +13,41 @@ class InformativosListScreen extends StatelessWidget {
     final controller = Get.find<InformativoController>();
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
-    final isTablet = size.width > 600;
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: _buildAppBar(theme, controller, isTablet),
+      appBar: _buildModernAppBar(theme, controller),
       body: Column(
         children: [
-          _buildFilterSection(controller, theme, isTablet),
+          _buildFilterSection(controller, theme),
           Expanded(
-            child: _buildInformativosList(controller, theme, isTablet),
+            child: _buildInformativosList(controller, theme),
           ),
         ],
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(ThemeData theme, InformativoController controller, bool isTablet) {
+  /// AppBar moderna e limpa
+  PreferredSizeWidget _buildModernAppBar(ThemeData theme, InformativoController controller) {
     return AppBar(
       title: const Text(
         'Informativos',
         style: TextStyle(
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w600,
           color: Colors.white,
+          fontSize: 20,
         ),
       ),
       backgroundColor: theme.colorScheme.primary,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+        icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white, size: 20),
         onPressed: () => Get.back(),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.refresh, color: Colors.white),
+          icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 24),
           onPressed: () => controller.atualizarDados(),
           tooltip: 'Atualizar',
         ),
@@ -55,26 +56,26 @@ class InformativosListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFilterSection(InformativoController controller, ThemeData theme, bool isTablet) {
+  /// Seção de filtros moderna
+  Widget _buildFilterSection(InformativoController controller, ThemeData theme) {
     final categorias = ['TODOS', 'PMDF', 'CBMDF', 'PCDF', 'PF', 'GERAL'];
 
     return Container(
-      padding: EdgeInsets.all(isTablet ? 20 : 16),
+      padding: const EdgeInsets.all(20),
       color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Filtrar por categoria:',
-            style: TextStyle(
-              fontSize: isTablet ? 16 : 14,
+            'Filtrar por categoria',
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
+              color: theme.colorScheme.onSurface,
             ),
           ),
-          SizedBox(height: isTablet ? 12 : 8),
+          const SizedBox(height: 16),
           SizedBox(
-            height: isTablet ? 45 : 40,
+            height: 40,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: categorias.length,
@@ -86,32 +87,30 @@ class InformativosListScreen extends StatelessWidget {
                       : controller.categoriaAtual.value == categoria;
 
                   return Container(
-                    margin: EdgeInsets.only(right: isTablet ? 12 : 8),
+                    margin: EdgeInsets.only(right: index == categorias.length - 1 ? 0 : 12),
                     child: FilterChip(
-                      label: Text(
-                        categoria,
-                        style: TextStyle(
-                          fontSize: isTablet ? 14 : 12,
-                          fontWeight: FontWeight.w600,
-                          color: isSelected ? Colors.white : Colors.grey[700],
-                        ),
-                      ),
+                      label: Text(categoria),
                       selected: isSelected,
                       onSelected: (selected) {
-                        if (selected) {
-                          final filtro = categoria == 'TODOS' ? 'GERAL' : categoria;
-                          controller.filtrarPorCategoria(filtro);
-                        }
+                        final categoriaFiltro = categoria == 'TODOS' ? null : categoria;
+                        controller.filtrarPorCategoria(categoriaFiltro ?? 'GERAL');
                       },
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : theme.colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                      backgroundColor: Colors.transparent,
                       selectedColor: theme.colorScheme.primary,
-                      backgroundColor: Colors.grey[200],
+                      checkmarkColor: Colors.white,
                       side: BorderSide(
-                        color: isSelected ? theme.colorScheme.primary : Colors.grey[300]!,
+                        color: theme.colorScheme.primary,
+                        width: 1.5,
                       ),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isTablet ? 16 : 12,
-                        vertical: isTablet ? 8 : 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
                       ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                   );
                 });
@@ -123,45 +122,49 @@ class InformativosListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInformativosList(InformativoController controller, ThemeData theme, bool isTablet) {
+  /// Lista de informativos moderna
+  Widget _buildInformativosList(InformativoController controller, ThemeData theme) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return _buildLoadingState(theme, isTablet);
+        return _buildLoadingState(theme);
       }
 
       if (controller.informativos.isEmpty) {
-        return _buildEmptyState(theme, isTablet);
+        return _buildEmptyState(theme, controller);
       }
 
       return RefreshIndicator(
         onRefresh: () => controller.atualizarDados(),
+        color: theme.colorScheme.primary,
         child: ListView.builder(
-          padding: EdgeInsets.all(isTablet ? 20 : 16),
+          padding: const EdgeInsets.all(16),
           itemCount: controller.informativos.length,
           itemBuilder: (context, index) {
             final informativo = controller.informativos[index];
-            return _buildInformativoCard(informativo, controller, theme, isTablet);
+            return _buildModernInformativoCard(informativo, controller, theme);
           },
         ),
       );
     });
   }
 
-  Widget _buildInformativoCard(
+  /// Card moderno do informativo
+  Widget _buildModernInformativoCard(
       InformativoModel informativo,
       InformativoController controller,
       ThemeData theme,
-      bool isTablet,
       ) {
+    final hasImage = informativo.imagemUrl != null && informativo.imagemUrl!.isNotEmpty;
+
     return Container(
-      margin: EdgeInsets.only(bottom: isTablet ? 16 : 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -169,186 +172,184 @@ class InformativosListScreen extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _navegarParaDetalhes(informativo),
+          onTap: () => _handleInformativoTap(informativo, controller),
           borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: EdgeInsets.all(isTablet ? 20 : 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Cabeçalho com categoria e prioridade
-                Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Imagem (se houver)
+              if (hasImage) _buildImageSection(informativo, controller, theme),
+
+              // Conteúdo do card
+              Padding(
+                padding: EdgeInsets.all(hasImage ? 16 : 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isTablet ? 12 : 8,
-                        vertical: isTablet ? 6 : 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: controller.getCorCategoria(informativo.categoria).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        informativo.categoria,
-                        style: TextStyle(
-                          fontSize: isTablet ? 12 : 10,
-                          fontWeight: FontWeight.bold,
-                          color: controller.getCorCategoria(informativo.categoria),
-                        ),
-                      ),
-                    ),
-                    const Spacer(),
-                    if (informativo.prioridade == 1)
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isTablet ? 10 : 8,
-                          vertical: isTablet ? 4 : 3,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'URGENTE',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: isTablet ? 10 : 8,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    if (informativo.linkExterno != null)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Icon(
-                          Icons.open_in_new,
-                          size: isTablet ? 18 : 16,
-                          color: Colors.grey[500],
-                        ),
-                      ),
+                    // Header com categoria e data
+                    _buildCardHeader(informativo, controller, theme),
+
+                    const SizedBox(height: 12),
+
+                    // Título
+                    _buildTitle(informativo, theme),
+
+                    const SizedBox(height: 8),
+
+                    // Conteúdo
+                    _buildContent(informativo, theme),
+
+                    const SizedBox(height: 16),
+
+                    // Footer com informações extras
+                    _buildCardFooter(informativo, theme),
                   ],
                 ),
-
-                SizedBox(height: isTablet ? 12 : 10),
-
-                // Título
-                Text(
-                  informativo.titulo,
-                  style: TextStyle(
-                    fontSize: isTablet ? 18 : 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                    height: 1.3,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                SizedBox(height: isTablet ? 10 : 8),
-
-                // Conteúdo resumido
-                Text(
-                  informativo.conteudo,
-                  style: TextStyle(
-                    fontSize: isTablet ? 15 : 14,
-                    color: Colors.grey[600],
-                    height: 1.4,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                SizedBox(height: isTablet ? 16 : 12),
-
-                // Rodapé com informações
-                Row(
-                  children: [
-                    Icon(
-                      Icons.access_time,
-                      size: isTablet ? 16 : 14,
-                      color: Colors.grey[500],
-                    ),
-                    SizedBox(width: isTablet ? 6 : 4),
-                    Text(
-                      DateUtilsCustom.formatDateToBrazil(informativo.dataPublicacao),
-                      style: TextStyle(
-                        fontSize: isTablet ? 13 : 12,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (informativo.dataExpiracao != null) ...[
-                      Icon(
-                        Icons.schedule,
-                        size: isTablet ? 16 : 14,
-                        color: Colors.orange[600],
-                      ),
-                      SizedBox(width: isTablet ? 4 : 2),
-                      Text(
-                        'Até ${DateUtilsCustom.formatDateToBrazil(informativo.dataExpiracao!)}',
-                        style: TextStyle(
-                          fontSize: isTablet ? 12 : 11,
-                          color: Colors.orange[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-
-                // Tags se existirem
-                if (informativo.tags != null && informativo.tags!.isNotEmpty) ...[
-                  SizedBox(height: isTablet ? 12 : 8),
-                  Wrap(
-                    spacing: isTablet ? 8 : 6,
-                    runSpacing: isTablet ? 6 : 4,
-                    children: informativo.tags!.take(3).map((tag) {
-                      return Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isTablet ? 8 : 6,
-                          vertical: isTablet ? 4 : 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '#$tag',
-                          style: TextStyle(
-                            fontSize: isTablet ? 11 : 10,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildLoadingState(ThemeData theme, bool isTablet) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            color: theme.colorScheme.primary,
-            strokeWidth: 3,
+  /// Seção da imagem
+  Widget _buildImageSection(InformativoModel informativo, InformativoController controller, ThemeData theme) {
+    return Container(
+      height: 200,
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Imagem
+            Image.network(
+              informativo.imagemUrl!,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  color: Colors.grey[200],
+                  child: Center(
+                    child: SizedBox(
+                      width: 30,
+                      height: 30,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                      ),
+                    ),
+                  ),
+                );
+              },
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        controller.getCorCategoria(informativo.categoria),
+                        controller.getCorCategoria(informativo.categoria).withOpacity(0.8),
+                      ],
+                    ),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.image_outlined,
+                          color: Colors.white.withOpacity(0.7),
+                          size: 40,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Imagem não disponível',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            // Gradient overlay
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.1),
+                  ],
+                ),
+              ),
+            ),
+
+            // Badge de categoria no canto superior
+            Positioned(
+              top: 12,
+              right: 12,
+              child: _buildCategoryBadge(informativo, controller),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Badge de categoria
+  Widget _buildCategoryBadge(InformativoModel informativo, InformativoController controller) {
+    final isUrgent = informativo.categoria.toUpperCase() == 'URGENTE';
+    final color = controller.getCorCategoria(informativo.categoria);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isUrgent ? Colors.red : color,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: (isUrgent ? Colors.red : color).withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
-          SizedBox(height: isTablet ? 20 : 16),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isUrgent) ...[
+            const Icon(
+              Icons.priority_high,
+              color: Colors.white,
+              size: 12,
+            ),
+            const SizedBox(width: 4),
+          ],
           Text(
-            'Carregando informativos...',
-            style: TextStyle(
-              fontSize: isTablet ? 16 : 14,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
+            informativo.categoria.toUpperCase(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -356,57 +357,218 @@ class InformativosListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme, bool isTablet) {
+  /// Header do card
+  Widget _buildCardHeader(InformativoModel informativo, InformativoController controller, ThemeData theme) {
+    final hasImage = informativo.imagemUrl != null && informativo.imagemUrl!.isNotEmpty;
+
+    return Row(
+      children: [
+        // Badge de categoria (só mostra se não há imagem)
+        if (!hasImage) _buildCategoryBadge(informativo, controller),
+
+        const Spacer(),
+
+        // Data
+        Row(
+          children: [
+            Icon(
+              Icons.access_time_rounded,
+              size: 14,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              _formatarData(informativo.dataPublicacao),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Título do informativo
+  Widget _buildTitle(InformativoModel informativo, ThemeData theme) {
+    return Text(
+      informativo.titulo,
+      style: theme.textTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: theme.colorScheme.onSurface,
+        height: 1.3,
+      ),
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  /// Conteúdo do informativo
+  Widget _buildContent(InformativoModel informativo, ThemeData theme) {
+    return Text(
+      informativo.conteudo,
+      style: theme.textTheme.bodyMedium?.copyWith(
+        color: theme.colorScheme.onSurface.withOpacity(0.7),
+        height: 1.5,
+      ),
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  /// Footer do card
+  Widget _buildCardFooter(InformativoModel informativo, ThemeData theme) {
+    return Row(
+      children: [
+        // Tags (se existirem)
+        if (informativo.tags != null && informativo.tags!.isNotEmpty) ...[
+          Expanded(
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: informativo.tags!.take(3).map((tag) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '#$tag',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ] else ...[
+          const Spacer(),
+        ],
+
+        // Ícone de link externo
+        if (informativo.linkExterno != null && informativo.linkExterno!.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.open_in_new_rounded,
+                  size: 14,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Link externo',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Estado de loading
+  Widget _buildLoadingState(ThemeData theme) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(isTablet ? 40 : 32),
+        padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.campaign_outlined,
-              size: isTablet ? 80 : 64,
-              color: Colors.grey[400],
+            SizedBox(
+              width: 40,
+              height: 40,
+              child: CircularProgressIndicator(
+                color: theme.colorScheme.primary,
+                strokeWidth: 3,
+              ),
             ),
-            SizedBox(height: isTablet ? 24 : 20),
+            const SizedBox(height: 20),
+            Text(
+              'Carregando informativos...',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Estado vazio
+  Widget _buildEmptyState(ThemeData theme, InformativoController controller) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.campaign_outlined,
+                size: 64,
+                color: theme.colorScheme.primary.withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 24),
             Text(
               'Nenhum informativo encontrado',
-              style: TextStyle(
-                fontSize: isTablet ? 20 : 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[600],
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: isTablet ? 12 : 8),
+            const SizedBox(height: 12),
             Text(
               'Não há informativos disponíveis para a categoria selecionada no momento.',
-              style: TextStyle(
-                fontSize: isTablet ? 16 : 14,
-                color: Colors.grey[500],
-                height: 1.4,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: isTablet ? 32 : 24),
+            const SizedBox(height: 32),
             ElevatedButton.icon(
-              onPressed: () => Get.find<InformativoController>().atualizarDados(),
+              onPressed: () => controller.atualizarDados(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 24 : 20,
-                  vertical: isTablet ? 16 : 12,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 0,
               ),
-              icon: const Icon(Icons.refresh),
-              label: Text(
+              icon: const Icon(Icons.refresh_rounded, size: 20),
+              label: const Text(
                 'Tentar novamente',
                 style: TextStyle(
-                  fontSize: isTablet ? 16 : 14,
+                  fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -417,11 +579,39 @@ class InformativosListScreen extends StatelessWidget {
     );
   }
 
+  /// Lidar com toque no informativo
+  void _handleInformativoTap(InformativoModel informativo, InformativoController controller) {
+    if (informativo.linkExterno != null && informativo.linkExterno!.isNotEmpty) {
+      // Se tem link externo, abre o link
+      controller.abrirLinkExterno(informativo.linkExterno!);
+    } else {
+      // Se não tem link externo, vai para detalhes
+      _navegarParaDetalhes(informativo);
+    }
+  }
+
+  /// Navegar para detalhes
   void _navegarParaDetalhes(InformativoModel informativo) {
     Get.to(
           () => InformativoDetailScreen(informativo: informativo),
       transition: Transition.cupertino,
       duration: const Duration(milliseconds: 300),
     );
+  }
+
+  /// Formatação de data
+  String _formatarData(DateTime data) {
+    final agora = DateTime.now();
+    final diferenca = agora.difference(data);
+
+    if (diferenca.inDays == 0) {
+      return 'Hoje';
+    } else if (diferenca.inDays == 1) {
+      return 'Ontem';
+    } else if (diferenca.inDays < 7) {
+      return '${diferenca.inDays}d atrás';
+    } else {
+      return DateUtilsCustom.formatDateToBrazil(data);
+    }
   }
 }
