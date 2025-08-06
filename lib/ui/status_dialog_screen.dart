@@ -51,7 +51,7 @@ class FullScreenStatusScreen extends StatelessWidget {
                 SizedBox(height: screenSize.height * 0.05),
                 ElevatedButton(
                   onPressed: () {
-                    isSuccess ? Get.offAll(HomeScreen(), transition: Transition.upToDown) : Get.back();
+                    Get.offAll(HomeScreen(), transition: Transition.upToDown);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,

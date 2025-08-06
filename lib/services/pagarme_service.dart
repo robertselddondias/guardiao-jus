@@ -1,3 +1,4 @@
+
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -41,7 +42,11 @@ class PagarMeService {
     required String alias,
     required String documentNumber,
     String? documentType,
-    String? customerId
+    String? customerId,
+    required String uf,
+    required String? city,
+    required String? zipCode,
+    required String? line1
   }) async {
     final url = Uri.parse('$baseUrl/customers/$customerId/cards');
     final dateSplit = cardExpirationDate.split('/');
@@ -51,6 +56,13 @@ class PagarMeService {
       "exp_year": dateSplit[1],
       "exp_month": dateSplit[0],
       "cvv": cardCvv,
+      "billing_address": {
+        "country": "BR",
+        "state": uf,
+        "city": city,
+        "zip_code": zipCode,
+        "line_1": line1
+      }
     };
 
     try {
@@ -112,6 +124,67 @@ class PagarMeService {
     }
   }
 
+  /// Atualiza os dados de um cliente
+  Future<Map<String, dynamic>> updateCustomer({
+    required String customerId,
+    String? name,
+    String? email,
+    String? documentNumber,
+    String? documentType,
+    String? phone,
+    String? uf,
+    String? city,
+    String? zipCode,
+    String? line1
+
+  }) async {
+    final url = Uri.parse('$baseUrl/customers/$customerId');
+
+    String phoneArea = phone!.substring(0, 2);
+    String phoneNumber = phone.substring(2, 11);
+
+    final body = {
+      if (name != null) "name": name,
+      if (email != null) "email": email,
+      if (documentNumber != null) "document": documentNumber.replaceAll(RegExp(r'[^0-9]'), ''),
+      if (documentType != null) "document_type": documentType,
+      "phones": {
+        "mobile_phone": {
+          "country_code": "55",
+          "area_code": phoneArea,
+          "number": phoneNumber
+        },
+        "address": {
+          "country": "BR",
+          "state": uf,
+          "city": city,
+          "zip_code": zipCode,
+          "line_1": line1
+        }
+      },
+      "type": documentType == 'CPF' ? 'individual' : 'company',
+      "code": FirebaseAuth.instance.currentUser!.uid
+    };
+
+    try {
+      final response = await http.put(
+        url,
+        headers: await _getAuthHeaders(),
+        body: jsonEncode(body),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception(
+          'Erro ao atualizar cliente: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Erro ao conectar com o Pagar.me: $e');
+    }
+  }
+
   /// Remove um cartão pelo ID
   Future<void> deleteCard(CreditCardUserModel card) async {
     final url = Uri.parse('$baseUrl/customers/${card.customerId}/cards/${card.cardId}');
@@ -138,7 +211,12 @@ class PagarMeService {
     required String email,
     required String documentNumber,
     required String documentType,
-    required String phone
+    required String phone,
+    required String uf,
+    required String city,
+    required String zipCode,
+    required String line1
+
   }) async {
     final url = Uri.parse('$baseUrl/customers');
 
@@ -149,7 +227,19 @@ class PagarMeService {
       "documentType": documentType,
       "code": FirebaseAuth.instance.currentUser!.uid,
       "type": documentType == 'CPF' ? 'individual' : 'company',
-      "phone": phone
+      "phones": {
+        "mobile_phone": {
+          "country_code": "55",
+          "number": phone
+        }
+      },
+      "address": {
+        "country": "BR",
+        "state": uf,
+        "city": city,
+        "zip_code": zipCode,
+        "line_1": line1
+      }
     };
 
     try {
@@ -193,45 +283,6 @@ class PagarMeService {
     }
   }
 
-  /// Atualiza os dados de um cliente
-  Future<Map<String, dynamic>> updateCustomer({
-    required String customerId,
-    String? name,
-    String? email,
-    String? documentNumber,
-    String? documentType,
-    String? phone
-  }) async {
-    final url = Uri.parse('$baseUrl/customers/$customerId');
-
-    final body = {
-      if (name != null) "name": name,
-      if (email != null) "email": email,
-      if (documentNumber != null) "document": documentNumber.replaceAll(RegExp(r'[^0-9]'), ''),
-      if (documentType != null) "document_type": documentType,
-      "type": documentType == 'CPF' ? 'individual' : 'company',
-      "code": FirebaseAuth.instance.currentUser!.uid
-    };
-
-    try {
-      final response = await http.put(
-        url,
-        headers: await _getAuthHeaders(),
-        body: jsonEncode(body),
-      );
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception(
-          'Erro ao atualizar cliente: ${response.statusCode} - ${response.body}',
-        );
-      }
-    } catch (e) {
-      throw Exception('Erro ao conectar com o Pagar.me: $e');
-    }
-  }
-
   /// Cria um pedido na API do Pagar.me
   Future<http.Response> createOrder(
       {
@@ -249,7 +300,7 @@ class PagarMeService {
       "items": [
         {
           'amount': amount,
-          'description': 'Viagem customerId: ${creditCard.customerId} - UsuarioId: ${creditCard.userId}',
+          'description': 'CONVÊNIO customerId: ${creditCard.customerId} - UsuarioId: ${creditCard.userId}',
           'quantity': 1,
           'code': 1
         },

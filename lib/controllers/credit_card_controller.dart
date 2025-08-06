@@ -85,11 +85,27 @@ class CreditCardController extends GetxController {
             email: user.email!,
             documentNumber: user.cpf!,
             documentType: 'CPF',
-            phone: user.phone!
+            phone: user.phone!,
+            uf: user.address!.uf!,
+            city: user.address!.city!,
+            zipCode: user.address!.cep!,
+            line1: user.address!.street!
         );
         user.customerId = idCustomer;
         await _firestore.collection('users').doc(userId).set(
             user.toMap(), SetOptions(merge: true));
+      } else {
+        _pagarMeService.updateCustomer(customerId: user.customerId!,
+            phone: user.phone,
+            name: user.name,
+            email: user.email,
+            documentNumber: user.cpf!,
+            documentType: 'CPF',
+            uf: user.address!.uf!,
+            city: user.address!.city!,
+            zipCode: user.address!.cep!,
+            line1: user.address!.street!
+        );
       }
 
       await _pagarMeService.createCard(
@@ -99,7 +115,11 @@ class CreditCardController extends GetxController {
           cardCvv: cvvController.text,
           alias: aliasController.text,
           documentNumber: user.cpf!,
-          customerId: user.customerId
+          customerId: user.customerId,
+          uf: user.address!.uf!,
+          city: user.address!.city!,
+          zipCode: user.address!.cep!,
+          line1: user.address!.street!
       );
 
 

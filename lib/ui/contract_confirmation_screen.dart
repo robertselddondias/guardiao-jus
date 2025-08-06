@@ -342,7 +342,7 @@ class ContractConfirmationScreen extends StatelessWidget {
         ),
       ),
       onTap: () {
-        controller.setPaymentMethod('$brandType *$lastDigits');
+        controller.setPaymentMethod('$brandType');
         controller.cardSelection.value = cardData;
         controller.createCreditTransaction(context);
       },

@@ -9,6 +9,10 @@ class ContractTransactionService {
 
   Future<void> saveTransaction(String idTransactional, PaymentGatewayTransactionModel paymentGatewayTransactionModel) async {
     await _gatewayTransactionsRepository.updateTransaction(idTransactional, paymentGatewayTransactionModel);
+  }
+
+  Future<void> saveTransactionWithUser(String idTransactional, PaymentGatewayTransactionModel paymentGatewayTransactionModel) async {
+    await _gatewayTransactionsRepository.updateTransaction(idTransactional, paymentGatewayTransactionModel);
     await _firestore.collection('users').doc(paymentGatewayTransactionModel.userId).set({
       'companyId': paymentGatewayTransactionModel.companyId,
       'contractId': paymentGatewayTransactionModel.contractId,

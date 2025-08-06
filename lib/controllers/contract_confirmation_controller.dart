@@ -136,7 +136,11 @@ class ContractConfirmationController extends GetxController {
           email: userModel.email!,
           documentNumber: userModel.cpf!,
           documentType: 'CPF',
-          phone: userModel.phone!
+          phone: userModel.phone!,
+          uf: userModel.address!.uf!,
+          city: userModel.address!.city!,
+          zipCode: userModel.address!.cep!,
+          line1: userModel.address!.street!
       );
       userModel.customerId = idCustomer;
       await FirebaseFirestore.instance.collection('users').doc(userModel.uid).set(
@@ -214,16 +218,20 @@ class ContractConfirmationController extends GetxController {
           if (newData?['orderId'] == idTransaction.value) {
             PaymentGatewayTransactionModel? gatewayTransactionModel = await _gatewayTransactionsRepository
                 .getTransactionById(idTransaction.value);
+
+            gatewayTransactionModel?.transactionId = newData?['transactionId'];
+            gatewayTransactionModel?.status = newData?['status'];
             if(newData?['status'] == 'paid') {
               gatewayTransactionModel?.paid = true;
               gatewayTransactionModel?.paymentMethod = newData?['paymentType'];
               isPayment.value = true;
+              Preferences.setString('companyId', company.value!.id!);
+              _contractTransactionService.saveTransactionWithUser(idTransaction.value, gatewayTransactionModel!);
+            } else {
+              _contractTransactionService.saveTransaction(idTransaction.value, gatewayTransactionModel!);
             }
-            gatewayTransactionModel?.transactionId = newData?['transactionId'];
-            gatewayTransactionModel?.status = newData?['status'];
-            _contractTransactionService.saveTransaction(idTransaction.value, gatewayTransactionModel!);
+
             isLoading.value = false;
-            Preferences.setString('companyId', company.value!.id!);
             Get.offAll(() => FullScreenStatusScreen(
               isSuccess: isPayment.value, // Define se é sucesso ou erro
               message: isPayment.value ? "Seu convênio foi contratado com sucesso!" : 'Ocorreu um erro no pagamento. Verifique o metódo de pagamento e tente novamente.',

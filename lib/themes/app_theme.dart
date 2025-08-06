@@ -23,8 +23,9 @@ class AppTheme {
       elevation: 4,
       centerTitle: true,
     ),
-    cardTheme: CardTheme(
-      color: AppColors.cardBackground,
+    cardTheme: CardThemeData(
+      surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.black.withOpacity(0.1),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -66,8 +67,9 @@ class AppTheme {
       elevation: 4,
       centerTitle: true,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: AppColors.darkCardBackground,
+      surfaceTintColor: Colors.transparent,
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
