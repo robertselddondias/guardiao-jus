@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:guardiao_cliente/controllers/company_controller.dart';
 import 'package:guardiao_cliente/models/company_model.dart';
 import 'package:guardiao_cliente/ui/company_detail_screen.dart';
+import 'package:guardiao_cliente/utils/PagarMeValueUtils.dart';
 
 class CompanyListScreen extends StatelessWidget {
   const CompanyListScreen({super.key});
@@ -126,7 +127,7 @@ class CompanyListScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     // Mensalidade
                     Text(
-                      'Mensalidade: R\$ ${company.monthlyValue?.toStringAsFixed(2) ?? 'Não disponível'}',
+                      'Mensalidade: ${PagarMeValueUtils.centavosToDisplay(company.monthlyValue!)}',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: theme.colorScheme.primary,

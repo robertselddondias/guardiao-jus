@@ -3,6 +3,7 @@ import 'package:flutter_progressive_image/flutter_progressive_image.dart';
 import 'package:get/get.dart';
 import 'package:guardiao_cliente/controllers/company_details_controller.dart';
 import 'package:guardiao_cliente/models/company_model.dart';
+import 'package:guardiao_cliente/utils/PagarMeValueUtils.dart';
 import 'package:open_filex/open_filex.dart';
 
 class CompanyDetailsScreen extends StatelessWidget {
@@ -54,7 +55,7 @@ class CompanyDetailsScreen extends StatelessWidget {
                   Center(
                     child: Center(
                       child: Text(
-                        'Mensalidade: R\$ ${controller.company.value.monthlyValue!.toStringAsFixed(2)}',
+                        'Mensalidade: ${PagarMeValueUtils.centavosToDisplay(controller.company.value.monthlyValue!)}',
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: theme.brightness == Brightness.dark
@@ -219,7 +220,7 @@ class CompanyDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Valor mensal: R\$ ${controller.company.value.monthlyValue?.toStringAsFixed(2) ?? "0,00"}',
+                    'Valor mensal: ${PagarMeValueUtils.centavosToDisplay(controller.company.value.monthlyValue!)}',
                     style: theme.textTheme.bodyLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.colorScheme.primary,

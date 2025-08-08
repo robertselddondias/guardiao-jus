@@ -126,8 +126,6 @@ class ContractConfirmationController extends GetxController {
   Future<void> createPixTransaction(BuildContext context) async {
     UserModel userModel = await _userRepository.getUserById();
 
-    String valor = '${company.value!.monthlyValue!.toString()}00';
-
     idTransaction.value = await createTransactional();
 
     if(userModel.customerId == null) {
@@ -148,7 +146,7 @@ class ContractConfirmationController extends GetxController {
     }
 
     http.Response response = await _pagarMeService.createPixTransaction(
-        amount: int.parse(valor),
+        amount: company.value!.monthlyValue!,
         orderId: idTransaction.value,
         customerId: userModel.customerId!);
     if(response.statusCode == 200) {
@@ -163,7 +161,7 @@ class ContractConfirmationController extends GetxController {
   Future<void> createCreditTransaction(BuildContext context) async {
     try {
       isLoading.value = true;
-      String valor = '${company.value!.monthlyValue!.toString()}00';
+      String valor = '${company.value!.monthlyValue!.toString()}';
 
       idTransaction.value = await createTransactional();
 

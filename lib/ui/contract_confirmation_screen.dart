@@ -3,6 +3,7 @@ import 'package:flutter_progressive_image/flutter_progressive_image.dart';
 import 'package:get/get.dart';
 import 'package:guardiao_cliente/controllers/contract_confirmation_controller.dart';
 import 'package:guardiao_cliente/ui/add_creditcard_screen.dart';
+import 'package:guardiao_cliente/utils/PagarMeValueUtils.dart';
 import 'package:guardiao_cliente/widgets/loading_indicator.dart';
 
 class ContractConfirmationScreen extends StatelessWidget {
@@ -51,7 +52,7 @@ class ContractConfirmationScreen extends StatelessWidget {
           final logoUrl = company.logoUrl ?? '';
           final monthlyValue = controller.monthlyValue.value;
           final chargeDate = controller.chargeDate.value;
-          final monthlyValueFormatted = 'R\$ ${monthlyValue.toStringAsFixed(2)}';
+          final monthlyValueFormatted = PagarMeValueUtils.centavosToDisplay(monthlyValue);
 
           return Stack(
             children: [
@@ -325,7 +326,7 @@ class ContractConfirmationScreen extends StatelessWidget {
           fit: BoxFit.cover,
         )
             : Image.asset(
-          'assets/images/master.png',
+          'assets/images/mastercard.png',
           width: 40,
           height: 40,
           fit: BoxFit.cover,

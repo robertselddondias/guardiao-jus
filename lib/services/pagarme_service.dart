@@ -220,6 +220,9 @@ class PagarMeService {
   }) async {
     final url = Uri.parse('$baseUrl/customers');
 
+    String phoneArea = phone!.substring(0, 2);
+    String phoneNumber = phone.substring(2, 11);
+
     final body = {
       "name": name,
       "email": email,
@@ -230,7 +233,8 @@ class PagarMeService {
       "phones": {
         "mobile_phone": {
           "country_code": "55",
-          "number": phone
+          "area_code": phoneArea,
+          "number": phoneNumber
         }
       },
       "address": {
@@ -252,6 +256,7 @@ class PagarMeService {
       if (response.statusCode == 200 || response.statusCode == 201) {
         return jsonDecode(response.body)['id'];
       } else {
+
         throw Exception(
           'Erro ao criar cliente: ${response.statusCode} - ${response.body}',
         );
