@@ -18,18 +18,28 @@ class RapScreen extends StatelessWidget {
   const RapScreen({super.key});
 
   void _showFileOptions(BuildContext context, RapController controller) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.shadow.withOpacity(isDark ? 0.5 : 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
           ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -41,7 +51,7 @@ class RapScreen extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
@@ -49,8 +59,9 @@ class RapScreen extends StatelessWidget {
 
                 Text(
                   'Adicionar Arquivo',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -58,38 +69,26 @@ class RapScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildFileOptionButton(
+                    _buildFileOption(
                       context,
-                      icon: Icons.camera_alt_rounded,
-                      label: 'Câmera',
-                      color: Colors.blue,
-                      onTap: () => _pickFile(context, controller, ImageSource.camera),
+                      theme,
+                      'Câmera',
+                      Icons.camera_alt_rounded,
+                          () => _pickFile(context, controller, ImageSource.camera),
                     ),
-                    _buildFileOptionButton(
+                    _buildFileOption(
                       context,
-                      icon: Icons.photo_library_rounded,
-                      label: 'Galeria',
-                      color: Colors.green,
-                      onTap: () => _pickFile(context, controller, ImageSource.gallery),
+                      theme,
+                      'Galeria',
+                      Icons.photo_library_rounded,
+                          () => _pickFile(context, controller, ImageSource.gallery),
                     ),
-                    _buildFileOptionButton(
+                    _buildFileOption(
                       context,
-                      icon: Icons.folder_rounded,
-                      label: 'Arquivos',
-                      color: Colors.orange,
-                      onTap: () async {
-                        Navigator.of(context).pop();
-                        // Remove o foco antes de abrir o seletor de arquivos
-                        FocusScope.of(context).unfocus();
-                        File? file = await FileUtils.pickFile();
-                        if (file != null) {
-                          controller.addFile(file);
-                          // Garante que o teclado não apareça após adicionar arquivo
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            FocusScope.of(context).unfocus();
-                          });
-                        }
-                      },
+                      theme,
+                      'Documento',
+                      Icons.description_rounded,
+                          () => _pickDocument(context, controller),
                     ),
                   ],
                 ),
@@ -100,39 +99,54 @@ class RapScreen extends StatelessWidget {
         );
       },
     );
-    FocusManager.instance.primaryFocus?.unfocus();
   }
 
-  Widget _buildFileOptionButton(
-      BuildContext context, {
-        required IconData icon,
-        required String label,
-        required Color color,
-        required VoidCallback onTap,
-      }) {
+  Widget _buildFileOption(BuildContext context, ThemeData theme, String label, IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 80,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: theme.colorScheme.primary.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
         child: Column(
           children: [
             Container(
-              width: 60,
-              height: 60,
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: color.withOpacity(0.3), width: 1),
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.primary.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: Icon(icon, color: color, size: 28),
+              child: Icon(
+                icon,
+                color: theme.colorScheme.onPrimary,
+                size: 24,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w500,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.primary,
               ),
-              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -140,13 +154,20 @@ class RapScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _pickFile(BuildContext context, RapController controller,
-      ImageSource source) async {
+  Future<void> _pickDocument(BuildContext context, RapController controller) async {
     try {
-      // Remove o foco de qualquer campo antes de selecionar arquivo
-      FocusScope.of(context).unfocus();
+      // Implementar seleção de documento
+      SnackbarCustom.showInfo('Funcionalidade de documento em breve.');
+    } catch (e) {
+      SnackbarCustom.showError('Erro ao selecionar documento.');
+    } finally {
+      Navigator.of(context).pop();
+    }
+  }
 
-      final ImagePicker picker = ImagePicker();
+  Future<void> _pickFile(BuildContext context, RapController controller, ImageSource source) async {
+    try {
+      final picker = ImagePicker();
       final XFile? xfile = await picker.pickImage(source: source);
       if (xfile != null) {
         controller.addFile(File(xfile.path));
@@ -172,9 +193,10 @@ class RapScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.put(RapController());
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: theme.colorScheme.background,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Novo RAP'),
@@ -244,6 +266,8 @@ class RapScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(ThemeData theme, RapController controller) {
+    final isDark = theme.brightness == Brightness.dark;
+
     return Obx(() => Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
@@ -255,7 +279,12 @@ class RapScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [
+                  colors: isDark
+                      ? [
+                    theme.colorScheme.primaryContainer.withOpacity(0.3),
+                    theme.colorScheme.primary.withOpacity(0.1),
+                  ]
+                      : [
                     theme.colorScheme.primary.withOpacity(0.1),
                     theme.colorScheme.primary.withOpacity(0.05),
                   ],
@@ -267,18 +296,37 @@ class RapScreen extends StatelessWidget {
                   color: theme.colorScheme.primary.withOpacity(0.2),
                   width: 1,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.shadow.withOpacity(isDark ? 0.3 : 0.1),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
               ),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.15),
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.primary.withOpacity(0.8),
+                        ],
+                      ),
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Icon(
                       Icons.assignment_turned_in_rounded,
-                      color: theme.colorScheme.primary,
+                      color: theme.colorScheme.onPrimary,
                       size: 24,
                     ),
                   ),
@@ -297,9 +345,8 @@ class RapScreen extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           "Registre ocorrências, adicione arquivos e acompanhe o processo jurídico.",
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface.withOpacity(0.7),
-                            height: 1.3,
                           ),
                         ),
                       ],
@@ -314,29 +361,57 @@ class RapScreen extends StatelessWidget {
   }
 
   Widget _buildStatusCard(RapModel rap, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            rap.status!.color.withOpacity(0.1),
+            rap.status!.color.withOpacity(0.15),
             rap.status!.color.withOpacity(0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: rap.status!.color.withOpacity(0.3), width: 1.5),
+        border: Border.all(
+          color: rap.status!.color.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: rap.status!.color.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: rap.status!.color.withOpacity(0.2),
+              gradient: LinearGradient(
+                colors: [
+                  rap.status!.color,
+                  rap.status!.color.withOpacity(0.8),
+                ],
+              ),
               borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: rap.status!.color.withOpacity(0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: Icon(rap.status!.icon, color: rap.status!.color, size: 28),
+            child: Icon(
+              rap.status!.icon,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -344,9 +419,9 @@ class RapScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Status do Processo",
+                  "Status do RAP",
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: rap.status!.color.withOpacity(0.8),
+                    color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -366,14 +441,20 @@ class RapScreen extends StatelessWidget {
   }
 
   Widget _buildFormFields(BuildContext context, RapController controller, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
+            color: theme.colorScheme.shadow.withOpacity(isDark ? 0.3 : 0.08),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -388,7 +469,12 @@ class RapScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary.withOpacity(0.2),
+                        theme.colorScheme.primary.withOpacity(0.1),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -440,14 +526,20 @@ class RapScreen extends StatelessWidget {
   }
 
   Widget _buildFilesSection(BuildContext context, RapController controller, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
+            color: theme.colorScheme.shadow.withOpacity(isDark ? 0.3 : 0.08),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -458,49 +550,63 @@ class RapScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.attach_file_rounded,
-                        color: Colors.orange[700],
-                        size: 20,
-                      ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.tertiary.withOpacity(0.2),
+                        theme.colorScheme.tertiary.withOpacity(0.1),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Text(
-                      "Arquivos",
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.orange[700],
-                      ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.attach_file_rounded,
+                    color: theme.colorScheme.tertiary,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    "Arquivos Anexados",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.tertiary,
                     ),
-                  ],
+                  ),
                 ),
                 Container(
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.primary.withOpacity(0.8),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: IconButton(
-                    onPressed: () => _showFileOptions(context, controller),
                     icon: Icon(
                       Icons.add_rounded,
-                      color: theme.colorScheme.primary,
+                      color: theme.colorScheme.onPrimary,
+                      size: 20,
                     ),
+                    onPressed: () => _showFileOptions(context, controller),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-
             Obx(() => controller.files.isEmpty
                 ? _buildEmptyFilesState(theme)
                 : _buildFileList(controller, theme)
@@ -515,22 +621,25 @@ class RapScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
+        border: Border.all(
+            color: theme.colorScheme.outline.withOpacity(0.2),
+            width: 1
+        ),
       ),
       child: Column(
         children: [
           Icon(
             Icons.cloud_upload_rounded,
             size: 48,
-            color: Colors.grey[400],
+            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
           ),
           const SizedBox(height: 12),
           Text(
             'Nenhum arquivo adicionado',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[600],
+              color: theme.colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -538,7 +647,7 @@ class RapScreen extends StatelessWidget {
           Text(
             'Toque em + para adicionar arquivos',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.grey[500],
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
             ),
           ),
         ],
@@ -558,9 +667,12 @@ class RapScreen extends StatelessWidget {
 
         return Container(
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[200]!, width: 1),
+            border: Border.all(
+                color: theme.colorScheme.outline.withOpacity(0.2),
+                width: 1
+            ),
           ),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -572,7 +684,7 @@ class RapScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
-                Icons.insert_drive_file_rounded,
+                _getFileIcon(fileName),
                 color: theme.colorScheme.primary,
                 size: 20,
               ),
@@ -581,6 +693,7 @@ class RapScreen extends StatelessWidget {
               fileName,
               style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -588,18 +701,16 @@ class RapScreen extends StatelessWidget {
             subtitle: Text(
               _getFileSize(file),
               style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            trailing: Container(
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+            trailing: IconButton(
+              icon: Icon(
+                Icons.delete_rounded,
+                color: theme.colorScheme.error,
+                size: 20,
               ),
-              child: IconButton(
-                icon: Icon(Icons.delete_outline_rounded, color: Colors.red[700], size: 20),
-                onPressed: () => controller.removeFile(file),
-              ),
+              onPressed: () => controller.removeFile(file),
             ),
           ),
         );
@@ -607,26 +718,22 @@ class RapScreen extends StatelessWidget {
     );
   }
 
-  String _getFileSize(File file) {
-    try {
-      final bytes = file.lengthSync();
-      if (bytes < 1024) return '$bytes B';
-      if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    } catch (e) {
-      return 'Tamanho desconhecido';
-    }
-  }
-
   Widget _buildNotesSection(RapController controller, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
+      margin: const EdgeInsets.only(top: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
+            color: theme.colorScheme.shadow.withOpacity(isDark ? 0.3 : 0.08),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -641,27 +748,60 @@ class RapScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.secondary.withOpacity(0.2),
+                        theme.colorScheme.secondary.withOpacity(0.1),
+                      ],
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
                     Icons.note_alt_rounded,
-                    color: Colors.blue[700],
+                    color: theme.colorScheme.secondary,
                     size: 20,
                   ),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  "Anotações",
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[700],
+                Expanded(
+                  child: Text(
+                    "Anotações (${controller.notesCount.value})",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.secondary,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            GuardiaoWidget.buildNotesSection(controller.notesList, theme),
+            // Implementar lista de notas aqui conforme necessário
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    color: theme.colorScheme.onSurfaceVariant,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Anotações do processo jurídico aparecerão aqui',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -669,98 +809,190 @@ class RapScreen extends StatelessWidget {
   }
 
   Widget _buildBottomButtons(BuildContext context, RapController controller, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
+            color: theme.colorScheme.shadow.withOpacity(isDark ? 0.3 : 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
       child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Obx(() {
-                return Visibility(
-                  visible: controller.verifyButtonFlag.value,
-                  child: Container(
-                    width: double.infinity,
-                    height: 52,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: ElevatedButton(
-                      onPressed: () async => await controller.sendToCompany(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.secondary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Obx(() {
+              return Visibility(
+                visible: controller.verifyButtonFlag.value,
+                child: Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.tertiary,
+                        theme.colorScheme.tertiary.withOpacity(0.8),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.tertiary.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.send_rounded, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Enviar para Jurídico',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () async {
+                      await controller.sendToCompany();
+                      Get.back();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: theme.colorScheme.onTertiary,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
+                    ),
+                    icon: Icon(Icons.send_rounded, size: 20),
+                    label: Text(
+                      'Enviar ao Jurídico',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+            Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.primary.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Obx(() {
+                return ElevatedButton.icon(
+                  onPressed: controller.isLoading.value
+                      ? null
+                      : () async {
+                    await controller.saveRecord(context);
+                    Get.back();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    foregroundColor: theme.colorScheme.onPrimary,
+                    elevation: 0,
+                    shadowColor: Colors.transparent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  icon: controller.isLoading.value
+                      ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                  )
+                      : Icon(Icons.save_rounded, size: 20),
+                  label: Text(
+                    controller.isLoading.value ? 'Salvando...' : 'Salvar RAP',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
                 );
               }),
-
-              Obx(() {
-                return Visibility(
-                  visible: !controller.isLoading.value,
-                  child: Container(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: () => controller.saveRecord(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.save_rounded, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Salvar RAP',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  // Função para obter o ícone do arquivo baseado na extensão
+  IconData _getFileIcon(String fileName) {
+    final extension = fileName.toLowerCase().split('.').last;
+    switch (extension) {
+      case 'pdf':
+        return Icons.picture_as_pdf_rounded;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'bmp':
+        return Icons.image_rounded;
+      case 'doc':
+      case 'docx':
+        return Icons.description_rounded;
+      case 'xls':
+      case 'xlsx':
+        return Icons.table_chart_rounded;
+      case 'txt':
+        return Icons.text_snippet_rounded;
+      case 'mp4':
+      case 'mov':
+      case 'avi':
+        return Icons.video_file_rounded;
+      case 'mp3':
+      case 'wav':
+      case 'aac':
+        return Icons.audio_file_rounded;
+      default:
+        return Icons.insert_drive_file_rounded;
+    }
+  }
+
+  // Função para obter o tamanho do arquivo
+  String _getFileSize(File file) {
+    try {
+      final bytes = file.lengthSync();
+      if (bytes < 1024) {
+        return '$bytes B';
+      } else if (bytes < 1024 * 1024) {
+        return '${(bytes / 1024).toStringAsFixed(1)} KB';
+      } else {
+        return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+      }
+    } catch (e) {
+      return 'Tamanho desconhecido';
+    }
   }
 
   Future<void> openDocument(String url) async {
@@ -773,6 +1005,7 @@ class RapScreen extends StatelessWidget {
 
   void _showHelpDialog(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     showGeneralDialog(
       context: context,
@@ -794,11 +1027,11 @@ class RapScreen extends StatelessWidget {
               backgroundColor: Colors.transparent,
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.colorScheme.surface,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: theme.colorScheme.shadow.withOpacity(isDark ? 0.5 : 0.15),
                       blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
@@ -809,98 +1042,67 @@ class RapScreen extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Ícone animado com gradiente
-                      TweenAnimationBuilder<double>(
-                        tween: Tween<double>(begin: 0, end: 1),
-                        duration: const Duration(milliseconds: 800),
-                        builder: (context, value, child) {
-                          return Transform.scale(
-                            scale: value,
-                            child: Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    theme.colorScheme.primary,
-                                    theme.colorScheme.primary.withOpacity(0.7),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: theme.colorScheme.primary.withOpacity(0.3),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 5),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(
-                                Icons.info_rounded,
-                                size: 40,
-                                color: Colors.white,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 24),
-
-                      Text(
-                        "O que é o Cadastro de RAP?",
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: theme.colorScheme.primary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            colors: [
+                              theme.colorScheme.primary.withOpacity(0.2),
+                              theme.colorScheme.primary.withOpacity(0.1),
+                            ],
+                          ),
+                          shape: BoxShape.circle,
                         ),
-                        child: Column(
-                          children: [
-                            Text(
-                              "RAP significa Registro de Atividade Policial. Este sistema permite que policiais registrem ocorrências, adicionem arquivos e compartilhem informações relevantes para análise jurídica.",
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurface.withOpacity(0.8),
-                                height: 1.5,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              "O objetivo é facilitar o acompanhamento e a organização das atividades policiais, garantindo transparência e eficiência no trabalho.",
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                height: 1.5,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                        child: Icon(
+                          Icons.help_outline_rounded,
+                          size: 40,
+                          color: theme.colorScheme.primary,
                         ),
                       ),
+                      const SizedBox(height: 20),
+                      Text(
+                        "Como criar um RAP",
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        "1. Preencha o título e descrição da ocorrência\n"
+                            "2. Selecione a data em que aconteceu\n"
+                            "3. Adicione fotos e documentos relevantes\n"
+                            "4. Salve para registrar no sistema\n"
+                            "5. Envie ao jurídico quando necessário",
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.5,
+                        ),
+                        textAlign: TextAlign.left,
+                      ),
                       const SizedBox(height: 24),
-
                       Container(
                         width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              theme.colorScheme.primary,
+                              theme.colorScheme.primary.withOpacity(0.8),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: TextButton(
                           onPressed: () => Navigator.of(context).pop(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: theme.colorScheme.onPrimary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
+                          child: Text(
                             "Entendi",
                             style: TextStyle(
                               fontWeight: FontWeight.bold,

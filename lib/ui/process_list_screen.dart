@@ -19,11 +19,12 @@ class ProcessListScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final screenSize = MediaQuery.of(context).size;
     final TextEditingController searchController = TextEditingController();
+    final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: theme.colorScheme.background,
         extendBodyBehindAppBar: true,
         appBar: AppBar(
           title: const Text('Minhas Solicitações'),
@@ -46,48 +47,53 @@ class ProcessListScreen extends StatelessWidget {
           ],
         ),
         body: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    _buildHeader(theme, controller),
-                    const SizedBox(height: 16),
-                    _buildSearchField(context, theme, controller, searchController),
-                    const SizedBox(height: 24),
-                  ],
+          child: RefreshIndicator(
+            onRefresh: () async => await controller.fetchProcessos(),
+            color: theme.colorScheme.primary,
+            backgroundColor: theme.colorScheme.surface,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      _buildHeader(theme, controller),
+                      const SizedBox(height: 16),
+                      _buildSearchField(context, theme, controller, searchController),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: Obx(() {
-                  if (controller.isLoading.value) {
-                    return const SliverToBoxAdapter(child: LoadingIndicator());
-                  }
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: Obx(() {
+                    if (controller.isLoading.value) {
+                      return const SliverToBoxAdapter(child: LoadingIndicator());
+                    }
 
-                  // Usa a lista filtrada em vez da lista original
-                  final processesToShow = controller.filteredProcessos;
+                    // Usa a lista filtrada em vez da lista original
+                    final processesToShow = controller.filteredProcessos;
 
-                  if (processesToShow.isEmpty) {
-                    return SliverToBoxAdapter(
-                      child: _buildEmptyState(theme, screenSize, controller.searchQuery.value.isNotEmpty),
+                    if (processesToShow.isEmpty) {
+                      return SliverToBoxAdapter(
+                        child: _buildEmptyState(theme, screenSize, controller.searchQuery.value.isNotEmpty),
+                      );
+                    }
+
+                    return SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                          final process = processesToShow[index];
+                          return _buildModernProcessCard(context, process, controller, theme);
+                        },
+                        childCount: processesToShow.length,
+                      ),
                     );
-                  }
-
-                  return SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                        final ProcessoModel process = processesToShow[index];
-                        return _buildModernProcessCard(context, process, controller, theme);
-                      },
-                      childCount: processesToShow.length,
-                    ),
-                  );
-                }),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
-            ],
+                  }),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
+            ),
           ),
         ),
         floatingActionButton: _buildModernFAB(context, controller, theme),
@@ -96,13 +102,20 @@ class ProcessListScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(ThemeData theme, ProcessListController controller) {
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       child: Obx(() => Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
+            colors: isDark
+                ? [
+              theme.colorScheme.primaryContainer.withOpacity(0.3),
+              theme.colorScheme.primary.withOpacity(0.1),
+            ]
+                : [
               theme.colorScheme.primary.withOpacity(0.1),
               theme.colorScheme.primary.withOpacity(0.05),
             ],
@@ -114,18 +127,37 @@ class ProcessListScreen extends StatelessWidget {
             color: theme.colorScheme.primary.withOpacity(0.2),
             width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.shadow.withOpacity(isDark ? 0.3 : 0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.15),
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.primary.withOpacity(0.8),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Icon(
                 Icons.assignment_turned_in_rounded,
-                color: theme.colorScheme.primary,
+                color: theme.colorScheme.onPrimary,
                 size: 24,
               ),
             ),
@@ -170,19 +202,25 @@ class ProcessListScreen extends StatelessWidget {
   }
 
   Widget _buildSearchField(BuildContext context, ThemeData theme, ProcessListController controller, TextEditingController searchController) {
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
+              color: theme.colorScheme.shadow.withOpacity(isDark ? 0.3 : 0.08),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
+          border: Border.all(
+            color: theme.colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
         ),
         child: TextField(
           controller: searchController,
@@ -190,10 +228,13 @@ class ProcessListScreen extends StatelessWidget {
           textInputAction: TextInputAction.search,
           onChanged: (value) => controller.filterProcesses(value),
           onSubmitted: (_) => FocusScope.of(context).unfocus(),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
           decoration: InputDecoration(
             hintText: 'Buscar por título, número do processo...',
             hintStyle: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[500],
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
             ),
             prefixIcon: Container(
               padding: const EdgeInsets.all(12),
@@ -209,18 +250,17 @@ class ProcessListScreen extends StatelessWidget {
               child: IconButton(
                 icon: Icon(
                   Icons.clear_rounded,
-                  color: Colors.grey[600],
+                  color: theme.colorScheme.onSurfaceVariant,
                   size: 20,
                 ),
                 onPressed: () {
                   searchController.clear();
-                  controller.clearSearch();
+                  controller.filterProcesses('');
                   FocusScope.of(context).unfocus();
                 },
               ),
             )
-                : const SizedBox.shrink()
-            ),
+                : const SizedBox.shrink()),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide.none,
@@ -233,7 +273,7 @@ class ProcessListScreen extends StatelessWidget {
               ),
             ),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: theme.colorScheme.surface,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
@@ -241,9 +281,10 @@ class ProcessListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildModernProcessCard(BuildContext context, ProcessoModel process,
-      ProcessListController controller, ThemeData theme) {
-    final statusInfo = _getProcessTypeInfo(process);
+  Widget _buildModernProcessCard(BuildContext context, ProcessoModel process, ProcessListController controller, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final statusColor = process.status.color;
+    final statusIcon = process.status.icon ?? Icons.help_outline_rounded;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -252,8 +293,9 @@ class ProcessListScreen extends StatelessWidget {
         direction: DismissDirection.endToStart,
         background: _buildDismissBackground(theme),
         confirmDismiss: (direction) async {
-          return await _confirmDelete(context, controller, process.id!);
+          return await _showDeleteConfirmation(context, process, theme);
         },
+        onDismissed: (direction) => controller.deleteProcess(process.id!),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -261,15 +303,15 @@ class ProcessListScreen extends StatelessWidget {
             onTap: () => _navigateToProcess(process),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: statusInfo['color'].withOpacity(0.2),
+                  color: statusColor.withOpacity(0.2),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: theme.colorScheme.shadow.withOpacity(isDark ? 0.3 : 0.08),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -282,19 +324,17 @@ class ProcessListScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        _buildProcessIcon(statusInfo),
+                        _buildProcessIcon(statusColor, statusIcon, theme),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                process.isNew
-                                    ? process.title!
-                                    : process.numeroProcesso!,
+                                process.title ?? 'Solicitação sem título',
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800],
+                                  color: theme.colorScheme.onSurface,
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -303,14 +343,19 @@ class ProcessListScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: statusInfo['color'].withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(12),
+                                  color: _getTypeColor(process.type, theme).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: _getTypeColor(process.type, theme).withOpacity(0.3),
+                                    width: 1,
+                                  ),
                                 ),
                                 child: Text(
-                                  statusInfo['label'],
+                                  _getTypeLabel(process.type),
                                   style: theme.textTheme.bodySmall?.copyWith(
-                                    color: statusInfo['color'],
+                                    color: _getTypeColor(process.type, theme),
                                     fontWeight: FontWeight.w600,
+                                    fontSize: 10,
                                   ),
                                 ),
                               ),
@@ -319,16 +364,20 @@ class ProcessListScreen extends StatelessWidget {
                         ),
                         Icon(
                           Icons.arrow_forward_ios_rounded,
-                          color: Colors.grey[400],
+                          color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
                           size: 16,
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 16),
 
+                    // Informações do processo
                     _buildProcessInfo(process, theme),
+
                     const SizedBox(height: 12),
 
+                    // Status
                     _buildProcessStatus(process, theme),
                   ],
                 ),
@@ -340,47 +389,34 @@ class ProcessListScreen extends StatelessWidget {
     );
   }
 
-  Map<String, dynamic> _getProcessTypeInfo(ProcessoModel process) {
-    if (process.isNew && process.type == PedidoType.PROCEDIMENTO_ADMINISTRATIVO) {
-      return {
-        'icon': Icons.policy_rounded,
-        'color': Colors.blue[600],
-        'label': 'Procedimento Administrativo',
-        'bgColor': Colors.blue[50],
-      };
-    } else if (process.isNew && process.type == PedidoType.PROCESSO) {
-      return {
-        'icon': Icons.gavel_rounded,
-        'color': Colors.green[600],
-        'label': 'Novo Processo Judicial',
-        'bgColor': Colors.green[50],
-      };
-    } else {
-      return {
-        'icon': Icons.account_balance_rounded,
-        'color': Colors.orange[600],
-        'label': 'Processo Existente',
-        'bgColor': Colors.orange[50],
-      };
-    }
-  }
-
-  Widget _buildProcessIcon(Map<String, dynamic> statusInfo) {
+  Widget _buildProcessIcon(Color statusColor, IconData statusIcon, ThemeData theme) {
     return Container(
-      width: 60,
-      height: 60,
+      width: 56,
+      height: 56,
       decoration: BoxDecoration(
-        color: statusInfo['bgColor'],
+        gradient: LinearGradient(
+          colors: [
+            statusColor.withOpacity(0.2),
+            statusColor.withOpacity(0.1),
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: statusInfo['color'].withOpacity(0.3),
+          color: statusColor.withOpacity(0.3),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: statusColor.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Icon(
-        statusInfo['icon'],
-        color: statusInfo['color'],
-        size: 28,
+        statusIcon,
+        color: statusColor,
+        size: 26,
       ),
     );
   }
@@ -389,32 +425,69 @@ class ProcessListScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Icon(
-            Icons.calendar_month_rounded,
-            color: Colors.grey[600],
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Criado em: ',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
+          if (process.numeroProcesso?.isNotEmpty == true) ...[
+            Row(
+              children: [
+                Icon(
+                  Icons.numbers_rounded,
+                  color: theme.colorScheme.primary,
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Processo: ',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    process.numeroProcesso!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-          Text(
-            process.createAt.isNotEmpty
-                ? DateUtilsCustom.formatDate(process.createAt)
-                : 'Data não informada',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.grey[800],
-              fontWeight: FontWeight.w600,
-            ),
+            const SizedBox(height: 8),
+          ],
+          Row(
+            children: [
+              Icon(
+                Icons.calendar_month_rounded,
+                color: theme.colorScheme.primary,
+                size: 16,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Criado em: ',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                process.createAt == null
+                    ? 'Data não informada'
+                    : DateUtilsCustom.formatDate(process.createAt),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -425,14 +498,7 @@ class ProcessListScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            process.status.color.withOpacity(0.1),
-            process.status.color.withOpacity(0.05),
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: process.status.color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: process.status.color.withOpacity(0.3),
@@ -442,10 +508,10 @@ class ProcessListScreen extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: process.status.color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Icon(
               process.status.icon ?? Icons.help_outline_rounded,
@@ -482,8 +548,20 @@ class ProcessListScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.red[400],
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.error,
+            theme.colorScheme.error.withOpacity(0.8),
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.error.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -524,8 +602,20 @@ class ProcessListScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary.withOpacity(0.15),
+                  theme.colorScheme.primary.withOpacity(0.05),
+                ],
+              ),
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Icon(
               isSearching ? Icons.search_off_rounded : Icons.inbox_rounded,
@@ -540,7 +630,7 @@ class ProcessListScreen extends StatelessWidget {
                 : 'Nenhuma solicitação cadastrada',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+              color: theme.colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
@@ -549,24 +639,44 @@ class ProcessListScreen extends StatelessWidget {
                 ? 'Tente ajustar os termos da sua busca\nou limpe o filtro para ver todas as solicitações'
                 : 'Crie sua primeira solicitação jurídica\ntocando no botão +',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[600],
+              color: theme.colorScheme.onSurfaceVariant,
               height: 1.4,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
           if (!isSearching)
-            ElevatedButton.icon(
-              onPressed: () => Get.to(() => const ProcessCreateScreen())?.then((_) =>
-                  Get.find<ProcessListController>().fetchProcessos()),
-              icon: Icon(Icons.add_rounded, size: 20),
-              label: Text('Nova Solicitação'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.primary.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ElevatedButton.icon(
+                onPressed: () => Get.to(() => const ProcessCreateScreen())?.then((_) =>
+                    Get.find<ProcessListController>().fetchProcessos()),
+                icon: Icon(Icons.add_rounded, size: 20),
+                label: Text('Nova Solicitação'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
@@ -591,7 +701,7 @@ class ProcessListScreen extends StatelessWidget {
         onPressed: () => Get.to(() => const ProcessCreateScreen())?.then((_) =>
             controller.fetchProcessos()),
         backgroundColor: theme.colorScheme.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: theme.colorScheme.onPrimary,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -608,154 +718,10 @@ class ProcessListScreen extends StatelessWidget {
     );
   }
 
-  void _navigateToProcess(ProcessoModel process) {
-    if (process.type == PedidoType.PROCESSO && !process.isNew) {
-      Get.to(() => const ProcessDetailScreen(),
-          arguments: {'processoId': process.id});
-    } else {
-      Get.to(() => const ProcAdministrativoScreen(),
-          arguments: {'processoId': process.id});
-    }
-  }
+  Future<bool?> _showDeleteConfirmation(BuildContext context, ProcessoModel process, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
 
-  void _showFilterDialog(BuildContext context, ProcessListController controller) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'Filtros de Busca',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue[200]!, width: 1),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.info_outline_rounded, color: Colors.blue[700], size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Filtros Disponíveis',
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue[700],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'A busca já filtra automaticamente por:\n• Título da solicitação\n• Número do processo\n• Tipo de processo\n• Status do processo\n• Nome do usuário\n• Descrição',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.blue[700],
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                Obx(() => Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.analytics_outlined, color: Colors.grey[600], size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Estatísticas',
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Total: ${controller.processos.length} | Exibindo: ${controller.filteredProcessos.length}',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                )),
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Fechar',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<bool> _confirmDelete(BuildContext context,
-      ProcessListController controller, String processId) async {
-    final theme = Theme.of(context);
-
-    return await showDialog<bool>(
+    return showDialog<bool>(
       context: context,
       barrierDismissible: true,
       builder: (context) {
@@ -763,11 +729,11 @@ class ProcessListScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: theme.colorScheme.shadow.withOpacity(isDark ? 0.5 : 0.15),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
                 ),
@@ -781,13 +747,18 @@ class ProcessListScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.colorScheme.error.withOpacity(0.2),
+                          theme.colorScheme.error.withOpacity(0.1),
+                        ],
+                      ),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.delete_forever_rounded,
                       size: 40,
-                      color: Colors.red[600],
+                      color: theme.colorScheme.error,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -795,14 +766,14 @@ class ProcessListScreen extends StatelessWidget {
                     "Excluir Solicitação",
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.red[700],
+                      color: theme.colorScheme.error,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    "Tem certeza de que deseja excluir esta solicitação? Esta ação não pode ser desfeita.",
+                    'Tem certeza de que deseja excluir a solicitação "${process.title}"? Esta ação não pode ser desfeita.',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
+                      color: theme.colorScheme.onSurfaceVariant,
                       height: 1.4,
                     ),
                     textAlign: TextAlign.center,
@@ -814,16 +785,16 @@ class ProcessListScreen extends StatelessWidget {
                         child: TextButton(
                           onPressed: () => Navigator.of(context).pop(false),
                           style: TextButton.styleFrom(
+                            backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                            foregroundColor: theme.colorScheme.onSurfaceVariant,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey[300]!),
                             ),
                           ),
                           child: Text(
                             "Cancelar",
                             style: TextStyle(
-                              color: Colors.grey[700],
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -831,24 +802,33 @@ class ProcessListScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            controller.deleteProcess(processId);
-                            Navigator.of(context).pop(true);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red[600],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                theme.colorScheme.error,
+                                theme.colorScheme.error.withOpacity(0.8),
+                              ],
                             ),
-                            elevation: 0,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text(
-                            "Excluir",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
+                          child: ElevatedButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              "Excluir",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -861,6 +841,160 @@ class ProcessListScreen extends StatelessWidget {
           ),
         );
       },
-    ) ?? false;
+    );
+  }
+
+  void _navigateToProcess(ProcessoModel process) {
+    if (process.type == PedidoType.PROCESSO && !process.isNew) {
+      Get.to(() => const ProcessDetailScreen(),
+          arguments: {'processoId': process.id});
+    } else {
+      Get.to(() => const ProcAdministrativoScreen(),
+          arguments: {'processoId': process.id});
+    }
+  }
+
+  void _showFilterDialog(BuildContext context, ProcessListController controller) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.shadow.withOpacity(isDark ? 0.5 : 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Filtros de Busca',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: theme.colorScheme.primary.withOpacity(0.2),
+                        width: 1
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.info_outline_rounded, color: theme.colorScheme.primary, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Filtros Disponíveis',
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'A busca já filtra automaticamente por:\n• Título da solicitação\n• Número do processo\n• Tipo de processo\n• Status do processo\n• Nome do usuário\n• Descrição',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                Obx(() => Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.analytics_outlined, color: theme.colorScheme.onSurfaceVariant, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Total de ${controller.processos.length} solicitações encontradas',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Função para obter a cor do tipo de processo
+  Color _getTypeColor(PedidoType type, ThemeData theme) {
+    switch (type) {
+      case PedidoType.PROCESSO:
+        return theme.colorScheme.tertiary;
+      case PedidoType.PROCEDIMENTO_ADMINISTRATIVO:
+        return theme.colorScheme.secondary;
+      default:
+        return theme.colorScheme.primary;
+    }
+  }
+
+  // Função para obter o label do tipo de processo
+  String _getTypeLabel(PedidoType type) {
+    switch (type) {
+      case PedidoType.PROCESSO:
+        return 'Processo Judicial';
+      case PedidoType.PROCEDIMENTO_ADMINISTRATIVO:
+        return 'Proc. Administrativo';
+      default:
+        return 'Solicitação';
+    }
   }
 }

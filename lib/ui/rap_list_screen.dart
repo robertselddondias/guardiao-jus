@@ -16,11 +16,12 @@ class RapListScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final size = MediaQuery.of(context).size;
     final TextEditingController searchController = TextEditingController();
+    final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: theme.colorScheme.background,
         extendBodyBehindAppBar: true,
         appBar: AppBar(
           title: const Text('RAPs'),
@@ -45,6 +46,8 @@ class RapListScreen extends StatelessWidget {
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: () async => await controller.fetchRaps(),
+            color: theme.colorScheme.primary,
+            backgroundColor: theme.colorScheme.surface,
             child: CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(
@@ -96,13 +99,20 @@ class RapListScreen extends StatelessWidget {
   }
 
   Widget _buildHeader(ThemeData theme, RapListController controller) {
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       child: Obx(() => Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
+            colors: isDark
+                ? [
+              theme.colorScheme.primaryContainer.withOpacity(0.3),
+              theme.colorScheme.primary.withOpacity(0.1),
+            ]
+                : [
               theme.colorScheme.primary.withOpacity(0.1),
               theme.colorScheme.primary.withOpacity(0.05),
             ],
@@ -114,6 +124,13 @@ class RapListScreen extends StatelessWidget {
             color: theme.colorScheme.primary.withOpacity(0.2),
             width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.shadow.withOpacity(isDark ? 0.3 : 0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -122,6 +139,13 @@ class RapListScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Icon(
                 Icons.assignment_rounded,
@@ -158,19 +182,25 @@ class RapListScreen extends StatelessWidget {
   }
 
   Widget _buildSearchField(BuildContext context, ThemeData theme, RapListController controller, TextEditingController searchController) {
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
+              color: theme.colorScheme.shadow.withOpacity(isDark ? 0.3 : 0.08),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
+          border: Border.all(
+            color: theme.colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
         ),
         child: TextField(
           controller: searchController,
@@ -181,10 +211,13 @@ class RapListScreen extends StatelessWidget {
             // controller.filterRaps(value);
           },
           onSubmitted: (_) => FocusScope.of(context).unfocus(),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
           decoration: InputDecoration(
             hintText: 'Buscar por título, descrição...',
             hintStyle: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[500],
+              color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
             ),
             prefixIcon: Container(
               padding: const EdgeInsets.all(12),
@@ -200,7 +233,7 @@ class RapListScreen extends StatelessWidget {
               child: IconButton(
                 icon: Icon(
                   Icons.clear_rounded,
-                  color: Colors.grey[600],
+                  color: theme.colorScheme.onSurfaceVariant,
                   size: 20,
                 ),
                 onPressed: () {
@@ -223,7 +256,7 @@ class RapListScreen extends StatelessWidget {
               ),
             ),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: theme.colorScheme.surface,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           ),
         ),
@@ -235,6 +268,7 @@ class RapListScreen extends StatelessWidget {
     final isCompanyRap = rap.companyId != null;
     final statusColor = rap.status?.color ?? theme.colorScheme.primary;
     final statusIcon = rap.status?.icon ?? Icons.description_rounded;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -255,7 +289,7 @@ class RapListScreen extends StatelessWidget {
             },
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: statusColor.withOpacity(0.2),
@@ -263,7 +297,7 @@ class RapListScreen extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: theme.colorScheme.shadow.withOpacity(isDark ? 0.3 : 0.08),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -276,7 +310,7 @@ class RapListScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        _buildRapIcon(statusColor, statusIcon),
+                        _buildRapIcon(statusColor, statusIcon, theme),
                         const SizedBox(width: 16),
                         Expanded(
                           child: Column(
@@ -289,7 +323,7 @@ class RapListScreen extends StatelessWidget {
                                       rap.title ?? 'RAP sem título',
                                       style: theme.textTheme.titleMedium?.copyWith(
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.grey[800],
+                                        color: theme.colorScheme.onSurface,
                                       ),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
@@ -303,14 +337,26 @@ class RapListScreen extends StatelessWidget {
                                         vertical: 4,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: Colors.blue[600],
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            theme.colorScheme.tertiary,
+                                            theme.colorScheme.tertiary.withOpacity(0.8),
+                                          ],
+                                        ),
                                         borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: theme.colorScheme.tertiary.withOpacity(0.3),
+                                            blurRadius: 4,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
                                       ),
                                       child: Text(
                                         'Jurídico',
                                         style: TextStyle(
                                           fontSize: 10,
-                                          color: Colors.white,
+                                          color: theme.colorScheme.onTertiary,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -324,6 +370,10 @@ class RapListScreen extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: statusColor.withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: statusColor.withOpacity(0.3),
+                                      width: 1,
+                                    ),
                                   ),
                                   child: Text(
                                     rap.status!.label,
@@ -339,7 +389,7 @@ class RapListScreen extends StatelessWidget {
                         ),
                         Icon(
                           Icons.arrow_forward_ios_rounded,
-                          color: Colors.grey[400],
+                          color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6),
                           size: 16,
                         ),
                       ],
@@ -357,17 +407,29 @@ class RapListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRapIcon(Color statusColor, IconData statusIcon) {
+  Widget _buildRapIcon(Color statusColor, IconData statusIcon, ThemeData theme) {
     return Container(
       width: 60,
       height: 60,
       decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
+        gradient: LinearGradient(
+          colors: [
+            statusColor.withOpacity(0.2),
+            statusColor.withOpacity(0.1),
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: statusColor.withOpacity(0.3),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: statusColor.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Icon(
         statusIcon,
@@ -381,21 +443,25 @@ class RapListScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
       ),
       child: Row(
         children: [
           Icon(
             Icons.calendar_month_rounded,
-            color: Colors.grey[600],
+            color: theme.colorScheme.primary,
             size: 16,
           ),
           const SizedBox(width: 8),
           Text(
             'Ocorrência: ',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.grey[600],
+              color: theme.colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -404,7 +470,7 @@ class RapListScreen extends StatelessWidget {
                 ? DateUtilsCustom.formatDate(rap.dtOcorrencia!)
                 : 'Data não informada',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.grey[800],
+              color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -417,8 +483,20 @@ class RapListScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.red[400],
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.error,
+            theme.colorScheme.error.withOpacity(0.8),
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.error.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -459,8 +537,20 @@ class RapListScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary.withOpacity(0.15),
+                  theme.colorScheme.primary.withOpacity(0.05),
+                ],
+              ),
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Icon(
               Icons.folder_open_rounded,
@@ -473,30 +563,50 @@ class RapListScreen extends StatelessWidget {
             'Nenhum RAP encontrado',
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+              color: theme.colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Crie seu primeiro RAP\ntocando no botão +',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[600],
+              color: theme.colorScheme.onSurfaceVariant,
               height: 1.4,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () => Get.to(() => const RapScreen())?.then((_) =>
-                controller.fetchRaps()),
-            icon: Icon(Icons.add_rounded, size: 20),
-            label: Text('Novo RAP'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary,
+                  theme.colorScheme.primary.withOpacity(0.8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ElevatedButton.icon(
+              onPressed: () => Get.to(() => const RapScreen())?.then((_) =>
+                  controller.fetchRaps()),
+              icon: Icon(Icons.add_rounded, size: 20),
+              label: Text('Novo RAP'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: theme.colorScheme.onPrimary,
+                elevation: 0,
+                shadowColor: Colors.transparent,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -521,7 +631,7 @@ class RapListScreen extends StatelessWidget {
         onPressed: () => Get.to(() => const RapScreen())?.then((_) =>
             controller.fetchRaps()),
         backgroundColor: theme.colorScheme.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: theme.colorScheme.onPrimary,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -540,6 +650,7 @@ class RapListScreen extends StatelessWidget {
 
   Future<bool> _showDeleteConfirmation(BuildContext context, RapListController controller, RapModel rap) async {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return await showDialog<bool>(
       context: context,
@@ -549,11 +660,11 @@ class RapListScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.15),
+                  color: theme.colorScheme.shadow.withOpacity(isDark ? 0.5 : 0.15),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
                 ),
@@ -567,13 +678,18 @@ class RapListScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.colorScheme.error.withOpacity(0.2),
+                          theme.colorScheme.error.withOpacity(0.1),
+                        ],
+                      ),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.delete_forever_rounded,
                       size: 40,
-                      color: Colors.red[600],
+                      color: theme.colorScheme.error,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -581,14 +697,14 @@ class RapListScreen extends StatelessWidget {
                     "Excluir RAP",
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.red[700],
+                      color: theme.colorScheme.error,
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'Tem certeza de que deseja excluir o RAP "${rap.title}"? Esta ação não pode ser desfeita.',
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
+                      color: theme.colorScheme.onSurfaceVariant,
                       height: 1.4,
                     ),
                     textAlign: TextAlign.center,
@@ -600,16 +716,16 @@ class RapListScreen extends StatelessWidget {
                         child: TextButton(
                           onPressed: () => Navigator.of(context).pop(false),
                           style: TextButton.styleFrom(
+                            backgroundColor: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                            foregroundColor: theme.colorScheme.onSurfaceVariant,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey[300]!),
                             ),
                           ),
                           child: Text(
                             "Cancelar",
                             style: TextStyle(
-                              color: Colors.grey[700],
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -617,24 +733,36 @@ class RapListScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).pop(true);
-                            controller.removeRap(rap);
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red[600],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                theme.colorScheme.error,
+                                theme.colorScheme.error.withOpacity(0.8),
+                              ],
                             ),
-                            elevation: 0,
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text(
-                            "Excluir",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(true);
+                              controller.removeRap(rap);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              "Excluir",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
@@ -651,18 +779,28 @@ class RapListScreen extends StatelessWidget {
   }
 
   void _showFiltersDialog(BuildContext context, RapListController controller) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.shadow.withOpacity(isDark ? 0.5 : 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
           ),
           child: Padding(
             padding: EdgeInsets.only(
@@ -678,7 +816,7 @@ class RapListScreen extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: theme.colorScheme.onSurfaceVariant.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
@@ -686,8 +824,9 @@ class RapListScreen extends StatelessWidget {
 
                 Text(
                   'Filtros de Busca',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -695,22 +834,25 @@ class RapListScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: theme.colorScheme.primaryContainer.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blue[200]!, width: 1),
+                    border: Border.all(
+                        color: theme.colorScheme.primary.withOpacity(0.2),
+                        width: 1
+                    ),
                   ),
                   child: Column(
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.info_outline_rounded, color: Colors.blue[700], size: 20),
+                          Icon(Icons.info_outline_rounded, color: theme.colorScheme.primary, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Filtros Avançados',
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              style: theme.textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blue[700],
+                                color: theme.colorScheme.primary,
                               ),
                             ),
                           ),
@@ -719,8 +861,8 @@ class RapListScreen extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         'Você pode filtrar RAPs por:\n• Título ou descrição\n• Data da ocorrência\n• Status do processo\n• Tipo de documento',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.blue[700],
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.primary,
                           height: 1.4,
                         ),
                       ),
@@ -733,53 +875,27 @@ class RapListScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[50],
+                    color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.colorScheme.outline.withOpacity(0.1),
+                      width: 1,
+                    ),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.analytics_outlined, color: Colors.grey[600], size: 20),
+                      Icon(Icons.analytics_outlined, color: theme.colorScheme.onSurfaceVariant, size: 20),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Total de RAPs',
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Obx(() => Text(
-                              '${controller.rapList.length} registros encontrados',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey[600],
-                              ),
-                            )),
-                          ],
+                        child: Text(
+                          'Filtros personalizados em breve...',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Fechar',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
                   ),
                 ),
               ],
