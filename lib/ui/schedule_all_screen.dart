@@ -17,152 +17,409 @@ class ScheduleAllScreen extends StatelessWidget {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('Agendamentos'),
-        centerTitle: true,
-        backgroundColor: theme.colorScheme.primary,
-        elevation: 0,
-        foregroundColor: Colors.white,
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const LoadingIndicator();
-        }
-
-        return Column(
-          children: [
-            _buildCalendarSection(controller, theme, size),
-            _buildEventsHeader(controller, theme),
-            Expanded(
-              child: _buildEventList(controller, theme, size),
-            ),
-          ],
-        );
-      }),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddEventSheet(context, controller),
-        backgroundColor: theme.colorScheme.primary,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
-    );
-  }
-
-  Widget _buildCalendarSection(ScheduleAllController controller, ThemeData theme, Size size) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              theme.colorScheme.primary.withOpacity(0.05),
+              theme.colorScheme.surface,
+            ],
+            stops: const [0.0, 0.3],
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: TableCalendar<ScheduleModel>(
-          locale: 'pt_BR',
-          firstDay: DateTime(2024),
-          lastDay: DateTime(2030),
-          focusedDay: controller.focusedDay.value,
-          selectedDayPredicate: (day) => isSameDay(controller.selectedDate.value, day),
-          onDaySelected: (selectedDay, focusedDay) {
-            controller.onDaySelected(selectedDay, focusedDay);
-          },
-          onPageChanged: (focusedDay) {
-            controller.focusedDay.value = focusedDay;
-          },
-          calendarStyle: CalendarStyle(
-            outsideDaysVisible: false,
-            weekendTextStyle: TextStyle(color: Colors.grey[600]),
-            holidayTextStyle: TextStyle(color: theme.colorScheme.primary),
-            defaultTextStyle: const TextStyle(fontSize: 14),
-            selectedDecoration: BoxDecoration(
-              color: theme.colorScheme.primary,
-              shape: BoxShape.circle,
-            ),
-            todayDecoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.3),
-              shape: BoxShape.circle,
-            ),
-            markerDecoration: BoxDecoration(
-              color: Colors.red,
-              shape: BoxShape.circle,
-            ),
-            markersMaxCount: 3,
-          ),
-          headerStyle: HeaderStyle(
-            formatButtonVisible: false,
-            titleCentered: true,
-            titleTextStyle: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: theme.colorScheme.primary,
-            ),
-            leftChevronIcon: Icon(
-              Icons.chevron_left,
-              color: theme.colorScheme.primary,
-            ),
-            rightChevronIcon: Icon(
-              Icons.chevron_right,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          calendarBuilders: CalendarBuilders(
-            markerBuilder: (context, date, events) {
-              if (events.isNotEmpty) {
-                return Positioned(
-                  bottom: 4,
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      shape: BoxShape.circle,
+        ),
+        child: CustomScrollView(
+          slivers: [
+            // AppBar moderna com SliverAppBar
+            SliverAppBar(
+              expandedHeight: size.height * 0.12,
+              floating: false,
+              pinned: true,
+              elevation: 0,
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              flexibleSpace: FlexibleSpaceBar(
+                centerTitle: true,
+                title: Text(
+                  'Agenda',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                ),
+                background: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.primary.withOpacity(0.8),
+                      ],
                     ),
                   ),
+                  child: Center(
+                    child: Icon(
+                      Icons.calendar_month_outlined,
+                      size: 48,
+                      color: Colors.white.withOpacity(0.3),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Conteúdo principal
+            SliverToBoxAdapter(
+              child: Obx(() {
+                if (controller.isLoading.value) {
+                  return Container(
+                    height: size.height * 0.6,
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(
+                            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
+                            strokeWidth: 3,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Carregando agenda...',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: [
+                    // Calendário moderno
+                    _buildModernCalendarSection(controller, theme, size),
+
+                    // Header dos eventos
+                    _buildModernEventsHeader(controller, theme, size),
+
+                    // Lista de eventos
+                    _buildModernEventList(controller, theme, size),
+
+                    // Espaço para o FAB
+                    SizedBox(height: size.height * 0.1),
+                  ],
                 );
-              }
-              return null;
-            },
+              }),
+            ),
+          ],
+        ),
+      ),
+
+      // FAB moderno
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.primary.withOpacity(0.8),
+            ],
           ),
-          eventLoader: (day) {
-            return controller.schedules.where((schedule) {
-              return isSameDay(DateTime.parse(schedule.date), day);
-            }).toList();
-          },
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.primary.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: FloatingActionButton(
+          onPressed: () => _showModernAddEventSheet(context, controller),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
         ),
       ),
     );
   }
 
-  Widget _buildEventsHeader(ScheduleAllController controller, ThemeData theme) {
+  Widget _buildModernCalendarSection(ScheduleAllController controller, ThemeData theme, Size size) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.symmetric(
+        horizontal: size.width * 0.05,
+        vertical: size.height * 0.02,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.08),
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Column(
+          children: [
+            // Header do calendário
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.05),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.calendar_today_outlined,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Calendário',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        Text(
+                          'Selecione uma data para ver os eventos',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Calendário
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: TableCalendar<ScheduleModel>(
+                locale: 'pt_BR',
+                firstDay: DateTime(2024),
+                lastDay: DateTime(2030),
+                focusedDay: controller.focusedDay.value,
+                selectedDayPredicate: (day) => isSameDay(controller.selectedDate.value, day),
+                onDaySelected: (selectedDay, focusedDay) {
+                  controller.onDaySelected(selectedDay, focusedDay);
+                },
+                onPageChanged: (focusedDay) {
+                  controller.focusedDay.value = focusedDay;
+                },
+                calendarStyle: CalendarStyle(
+                  outsideDaysVisible: false,
+                  weekendTextStyle: TextStyle(
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  holidayTextStyle: TextStyle(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  defaultTextStyle: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.primary.withOpacity(0.8),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  todayDecoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: theme.colorScheme.primary.withOpacity(0.5),
+                      width: 2,
+                    ),
+                  ),
+                  markerDecoration: BoxDecoration(
+                    color: Colors.orange.shade400,
+                    shape: BoxShape.circle,
+                  ),
+                  markersMaxCount: 3,
+                  cellMargin: const EdgeInsets.all(6),
+                ),
+                headerStyle: HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                  titleTextStyle: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                  leftChevronIcon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.chevron_left_rounded,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                  rightChevronIcon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      color: theme.colorScheme.primary,
+                      size: 20,
+                    ),
+                  ),
+                ),
+                calendarBuilders: CalendarBuilders(
+                  markerBuilder: (context, date, events) {
+                    if (events.isNotEmpty) {
+                      return Positioned(
+                        bottom: 6,
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade400,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.orange.withOpacity(0.3),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
+                    return null;
+                  },
+                ),
+                eventLoader: (day) {
+                  return controller.schedules.where((schedule) {
+                    return isSameDay(DateTime.parse(schedule.date), day);
+                  }).toList();
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernEventsHeader(ScheduleAllController controller, ThemeData theme, Size size) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: size.width * 0.05,
+        vertical: size.height * 0.01,
+      ),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           Container(
-            width: 4,
-            height: 24,
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.event_note_outlined,
               color: theme.colorScheme.primary,
-              borderRadius: BorderRadius.circular(2),
+              size: 20,
             ),
           ),
           const SizedBox(width: 12),
-          Text(
-            'Eventos do dia',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Eventos do Dia',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                Obx(() {
+                  final selectedDateFormatted = DateUtilsCustom.formatDateToBrazil(controller.selectedDate.value);
+                  return Text(
+                    selectedDateFormatted,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
+                  );
+                }),
+              ],
             ),
           ),
-          const Spacer(),
           Obx(() {
             final dayEvents = controller.schedules.where((schedule) {
               return DateFormat('yyyy-MM-dd').format(DateTime.parse(schedule.date)) ==
@@ -171,29 +428,52 @@ class ScheduleAllScreen extends StatelessWidget {
 
             if (dayEvents > 0) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.colorScheme.primary.withOpacity(0.15),
+                      theme.colorScheme.primary.withOpacity(0.08),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: theme.colorScheme.primary.withOpacity(0.2),
+                    width: 1,
+                  ),
                 ),
                 child: Text(
                   '$dayEvents evento${dayEvents > 1 ? 's' : ''}',
                   style: TextStyle(
                     fontSize: 12,
                     color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               );
             }
-            return const SizedBox();
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.outline.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                'Nenhum evento',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurface.withOpacity(0.5),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            );
           }),
         ],
       ),
     );
   }
 
-  Widget _buildEventList(ScheduleAllController controller, ThemeData theme, Size size) {
+  Widget _buildModernEventList(ScheduleAllController controller, ThemeData theme, Size size) {
     return Obx(() {
       final events = controller.schedules.where((schedule) {
         return DateFormat('yyyy-MM-dd').format(DateTime.parse(schedule.date)) ==
@@ -201,110 +481,111 @@ class ScheduleAllScreen extends StatelessWidget {
       }).toList();
 
       if (events.isEmpty) {
-        return _buildEmptyState(theme);
+        return _buildModernEmptyState(theme, size);
       }
 
-      return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: events.length,
-        itemBuilder: (context, index) {
-          final event = events[index];
-          return _buildEventCard(event, theme, controller, size);
-        },
+      return Container(
+        margin: EdgeInsets.symmetric(horizontal: size.width * 0.05),
+        child: Column(
+          children: events.asMap().entries.map((entry) {
+            final index = entry.key;
+            final event = entry.value;
+            return Padding(
+              padding: EdgeInsets.only(bottom: index < events.length - 1 ? 12 : 0),
+              child: _buildModernEventCard(event, theme, controller, size),
+            );
+          }).toList(),
+        ),
       );
     });
   }
 
-  Widget _buildEventCard(ScheduleModel event, ThemeData theme, ScheduleAllController controller, Size size) {
+  Widget _buildModernEventCard(ScheduleModel event, ThemeData theme, ScheduleAllController controller, Size size) {
     final isCompanyEvent = event.companyId != null;
-    final cardColor = isCompanyEvent ? Colors.blue[50] : Colors.white;
-    final borderColor = isCompanyEvent ? Colors.blue[200] : Colors.grey[200];
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor!, width: 1),
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: isCompanyEvent
+                ? Colors.blue.withOpacity(0.08)
+                : theme.colorScheme.primary.withOpacity(0.08),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
+        border: Border.all(
+          color: isCompanyEvent
+              ? Colors.blue.withOpacity(0.2)
+              : theme.colorScheme.outline.withOpacity(0.1),
+          width: 1,
+        ),
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => _showEventDetails(Get.context!, event, controller),
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => _showModernEventDetails(Get.context!, event, controller),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Row(
               children: [
+                // Ícone do evento com design moderno
                 Container(
-                  width: 50,
-                  height: 50,
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isCompanyEvent
-                        ? Colors.blue
-                        : theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      colors: isCompanyEvent
+                          ? [Colors.blue, Colors.blue.withOpacity(0.8)]
+                          : [theme.colorScheme.primary, theme.colorScheme.primary.withOpacity(0.8)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isCompanyEvent ? Colors.blue : theme.colorScheme.primary).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: Icon(
-                    isCompanyEvent ? Icons.business : Icons.event,
+                    isCompanyEvent ? Icons.business_outlined : Icons.event_outlined,
                     color: Colors.white,
                     size: 24,
                   ),
                 ),
                 const SizedBox(width: 16),
+
+                // Conteúdo do evento
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        event.title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        event.description,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
+                      // Título e badge
                       Row(
                         children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 16,
-                            color: Colors.grey[500],
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            event.time,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w500,
+                          Expanded(
+                            child: Text(
+                              event.title,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (isCompanyEvent) ...[
-                            const SizedBox(width: 12),
+                          if (isCompanyEvent)
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                 color: Colors.blue,
                                 borderRadius: BorderRadius.circular(8),
@@ -318,15 +599,65 @@ class ScheduleAllScreen extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          ],
                         ],
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Descrição
+                      Text(
+                        event.description,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                          height: 1.4,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Horário
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.access_time_outlined,
+                              size: 14,
+                              color: theme.colorScheme.primary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              event.time,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Icon(
-                  Icons.chevron_right,
-                  color: Colors.grey[400],
+
+                // Ícone de navegação
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
                 ),
               ],
             ),
@@ -336,213 +667,306 @@ class ScheduleAllScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(ThemeData theme) {
-    return Center(
+  Widget _buildModernEmptyState(ThemeData theme, Size size) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: size.width * 0.05),
+      padding: EdgeInsets.all(size.width * 0.1),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.event_note,
-            size: 64,
-            color: Colors.grey[400],
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.event_available_outlined,
+              size: 48,
+              color: theme.colorScheme.primary,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
             'Nenhum evento para esta data',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Toque no botão + para adicionar um evento',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
+            'Toque no botão + para adicionar um novo evento',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              height: 1.4,
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
 
-  void _showAddEventSheet(BuildContext context, ScheduleAllController controller) {
+  void _showModernAddEventSheet(BuildContext context, ScheduleAllController controller) {
     final theme = Theme.of(context);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 20,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -8),
+              ),
+            ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle bar
-              Center(
-                child: Container(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 20,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: theme.colorScheme.outline.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-              // Título
-              Text(
-                'Novo Agendamento',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Data selecionada
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
+                // Header
+                Row(
                   children: [
-                    Icon(
-                      Icons.calendar_today,
-                      color: theme.colorScheme.primary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      DateUtilsCustom.formatDateToBrazil(controller.selectedDate.value),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.add_task_outlined,
                         color: theme.colorScheme.primary,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Novo Agendamento',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            'Adicione um evento à sua agenda',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
-              // Campo Título
-              TextField(
-                controller: controller.titleController,
-                decoration: InputDecoration(
-                  labelText: 'Título',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Campo Descrição
-              TextField(
-                controller: controller.descriptionController,
-                maxLines: 3,
-                decoration: InputDecoration(
-                  labelText: 'Descrição',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Seleção de horário
-              InkWell(
-                onTap: () async {
-                  final selectedTime = await showTimePicker(
-                    context: context,
-                    initialTime: TimeOfDay.now(),
-                  );
-                  if (selectedTime != null) {
-                    controller.selectedTime.value = selectedTime.format(context);
-                  }
-                },
-                child: Container(
+                // Data selecionada
+                Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
+                    color: theme.colorScheme.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(12),
-                    color: Colors.grey[50],
+                    border: Border.all(
+                      color: theme.colorScheme.primary.withOpacity(0.2),
+                      width: 1,
+                    ),
                   ),
                   child: Row(
                     children: [
                       Icon(
-                        Icons.access_time,
-                        color: Colors.grey[600],
+                        Icons.calendar_today_outlined,
+                        color: theme.colorScheme.primary,
+                        size: 20,
                       ),
                       const SizedBox(width: 12),
-                      Obx(() => Text(
-                        controller.selectedTime.value.isEmpty
-                            ? 'Selecionar horário'
-                            : controller.selectedTime.value,
+                      Text(
+                        DateUtilsCustom.formatDateToBrazil(controller.selectedDate.value),
                         style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.primary,
                           fontSize: 16,
-                          color: controller.selectedTime.value.isEmpty
-                              ? Colors.grey[600]
-                              : Colors.grey[800],
                         ),
-                      )),
-                      const Spacer(),
-                      Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Colors.grey[600],
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-              // Botão salvar
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    controller.addSchedule();
-                    Get.back();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                // Campos do formulário
+                _buildModernTextField(
+                  controller: controller.titleController,
+                  label: 'Título do evento',
+                  hint: 'Ex: Reunião, Consulta, Compromisso...',
+                  icon: Icons.title_outlined,
+                  theme: theme,
+                ),
+                const SizedBox(height: 16),
+
+                _buildModernTextField(
+                  controller: controller.descriptionController,
+                  label: 'Descrição',
+                  hint: 'Adicione detalhes sobre o evento...',
+                  icon: Icons.description_outlined,
+                  maxLines: 3,
+                  theme: theme,
+                ),
+                const SizedBox(height: 16),
+
+                // Seleção de horário moderna
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Horário',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () async {
+                        _showTimeSelector(context, controller, theme);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surface,
+                          border: Border.all(
+                            color: theme.colorScheme.outline.withOpacity(0.3),
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.access_time_outlined,
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Obx(() => Text(
+                                controller.selectedTime.value.isEmpty
+                                    ? 'Selecionar horário'
+                                    : controller.selectedTime.value,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: controller.selectedTime.value.isEmpty
+                                      ? theme.colorScheme.onSurface.withOpacity(0.6)
+                                      : theme.colorScheme.onSurface,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              )),
+                            ),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Botão salvar moderno
+                Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.primary.withOpacity(0.8),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
-                  child: const Text(
-                    'Salvar Agendamento',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
+                        controller.addSchedule();
+                        Get.back();
+                      },
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.save_outlined,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Salvar Agendamento',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -551,172 +975,603 @@ class ScheduleAllScreen extends StatelessWidget {
     });
   }
 
-  void _showEventDetails(BuildContext context, ScheduleModel event, ScheduleAllController controller) {
+  Widget _buildModernTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    required IconData icon,
+    required ThemeData theme,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          decoration: InputDecoration(
+            hintText: hint,
+            prefixIcon: Icon(
+              icon,
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
+              size: 20,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: theme.colorScheme.outline.withOpacity(0.3),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: theme.colorScheme.outline.withOpacity(0.3),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: theme.colorScheme.primary,
+                width: 2,
+              ),
+            ),
+            filled: true,
+            fillColor: theme.colorScheme.surface,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showModernEventDetails(BuildContext context, ScheduleModel event, ScheduleAllController controller) {
     final theme = Theme.of(context);
     final isCompanyEvent = event.companyId != null;
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Handle bar
-              Center(
-                child: Container(
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -8),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: theme.colorScheme.outline.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-              // Cabeçalho
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isCompanyEvent
-                          ? Colors.blue.withOpacity(0.1)
-                          : theme.colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
+                // Cabeçalho moderno
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isCompanyEvent
+                          ? [Colors.blue.withOpacity(0.1), Colors.blue.withOpacity(0.05)]
+                          : [theme.colorScheme.primary.withOpacity(0.1), theme.colorScheme.primary.withOpacity(0.05)],
                     ),
-                    child: Icon(
-                      isCompanyEvent ? Icons.business : Icons.event,
-                      color: isCompanyEvent ? Colors.blue : theme.colorScheme.primary,
-                      size: 24,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isCompanyEvent
+                          ? Colors.blue.withOpacity(0.2)
+                          : theme.colorScheme.primary.withOpacity(0.2),
+                      width: 1,
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          event.title,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isCompanyEvent
+                                ? [Colors.blue, Colors.blue.withOpacity(0.8)]
+                                : [theme.colorScheme.primary, theme.colorScheme.primary.withOpacity(0.8)],
                           ),
-                        ),
-                        if (isCompanyEvent)
-                          Container(
-                            margin: const EdgeInsets.only(top: 4),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.blue,
-                              borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isCompanyEvent ? Colors.blue : theme.colorScheme.primary).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
-                            child: Text(
-                              'Agendado pelo Jurídico',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.white,
+                          ],
+                        ),
+                        child: Icon(
+                          isCompanyEvent ? Icons.business_outlined : Icons.event_outlined,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              event.title,
+                              style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                            if (isCompanyEvent) ...[
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'Agendado pelo Jurídico',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Informações do evento
+                _buildModernDetailRow(
+                  Icons.description_outlined,
+                  'Descrição',
+                  event.description,
+                  theme,
+                ),
+                _buildModernDetailRow(
+                  Icons.access_time_outlined,
+                  'Horário',
+                  event.time,
+                  theme,
+                ),
+                _buildModernDetailRow(
+                  Icons.calendar_today_outlined,
+                  'Data',
+                  DateUtilsCustom.formatDateToBrazil(DateTime.parse(event.date)),
+                  theme,
+                ),
+
+                const SizedBox(height: 32),
+
+                // Botões de ação
+                if (!isCompanyEvent) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: theme.colorScheme.primary.withOpacity(0.3),
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Get.back();
+                              controller.loadScheduleForEditing(event);
+                              _showModernEditEventSheet(context, controller);
+                            },
+                            icon: Icon(
+                              Icons.edit_outlined,
+                              color: theme.colorScheme.primary,
+                              size: 18,
+                            ),
+                            label: Text(
+                              'Editar',
+                              style: TextStyle(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                           ),
-                      ],
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Get.back();
+                              _showModernDeleteConfirmation(context, controller, event);
+                            },
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            label: const Text(
+                              'Excluir',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  Container(
+                    width: double.infinity,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.primary.withOpacity(0.8),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: TextButton(
+                      onPressed: () => Get.back(),
+                      style: TextButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Fechar',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 20),
-
-              // Informações do evento
-              _buildDetailRow(Icons.description, 'Descrição', event.description),
-              _buildDetailRow(Icons.access_time, 'Horário', event.time),
-              _buildDetailRow(Icons.calendar_today, 'Data', DateUtilsCustom.formatDateToBrazil(DateTime.parse(event.date))),
-
-              const SizedBox(height: 24),
-
-              // Botões de ação
-              if (!isCompanyEvent) ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Get.back();
-                          controller.loadScheduleForEditing(event);
-                          _showEditEventSheet(context, controller);
-                        },
-                        icon: const Icon(Icons.edit),
-                        label: const Text('Editar'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          Get.back();
-                          _showDeleteConfirmation(context, controller, event);
-                        },
-                        icon: const Icon(Icons.delete),
-                        label: const Text('Excluir'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ] else ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Get.back(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: theme.colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text(
-                      'Fechar',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
               ],
-            ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+  // Método para mostrar seletor de horário personalizado
+  void _showTimeSelector(BuildContext context, ScheduleAllController controller, ThemeData theme) {
+    int selectedHour = 9;
+    int selectedMinute = 0;
+
+    // Se já tem um horário selecionado, usa como valor inicial
+    if (controller.selectedTime.value.isNotEmpty) {
+      try {
+        final parts = controller.selectedTime.value.split(':');
+        selectedHour = int.parse(parts[0]);
+        selectedMinute = int.parse(parts[1]);
+      } catch (e) {
+        // Se der erro, mantém valores padrão
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              height: 320,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, -8),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  // Handle bar
+                  Container(
+                    margin: const EdgeInsets.only(top: 12),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.outline.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Selecionar Horário',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Get.back(),
+                          child: Text(
+                            'Cancelar',
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Seletores de hora e minuto
+                  Expanded(
+                    child: Row(
+                      children: [
+                        // Seletor de hora
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Text(
+                                'Hora',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Expanded(
+                                child: ListWheelScrollView.useDelegate(
+                                  itemExtent: 50,
+                                  perspective: 0.003,
+                                  diameterRatio: 1.2,
+                                  physics: const FixedExtentScrollPhysics(),
+                                  onSelectedItemChanged: (index) {
+                                    setState(() {
+                                      selectedHour = index;
+                                    });
+                                  },
+                                  controller: FixedExtentScrollController(
+                                    initialItem: selectedHour,
+                                  ),
+                                  childDelegate: ListWheelChildBuilderDelegate(
+                                    builder: (context, index) {
+                                      if (index < 0 || index > 23) return null;
+                                      final isSelected = index == selectedHour;
+                                      return Container(
+                                        height: 50,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? theme.colorScheme.primary.withOpacity(0.1)
+                                              : Colors.transparent,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          index.toString().padLeft(2, '0'),
+                                          style: TextStyle(
+                                            fontSize: isSelected ? 24 : 18,
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                            color: isSelected
+                                                ? theme.colorScheme.primary
+                                                : theme.colorScheme.onSurface.withOpacity(0.6),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    childCount: 24,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Separador
+                        Container(
+                          height: 100,
+                          child: Center(
+                            child: Text(
+                              ':',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Seletor de minuto
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Text(
+                                'Minuto',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Expanded(
+                                child: ListWheelScrollView.useDelegate(
+                                  itemExtent: 50,
+                                  perspective: 0.003,
+                                  diameterRatio: 1.2,
+                                  physics: const FixedExtentScrollPhysics(),
+                                  onSelectedItemChanged: (index) {
+                                    setState(() {
+                                      selectedMinute = index * 5; // Intervalos de 5 em 5
+                                    });
+                                  },
+                                  controller: FixedExtentScrollController(
+                                    initialItem: selectedMinute ~/ 5,
+                                  ),
+                                  childDelegate: ListWheelChildBuilderDelegate(
+                                    builder: (context, index) {
+                                      if (index < 0 || index > 11) return null;
+                                      final minute = index * 5;
+                                      final isSelected = minute == selectedMinute;
+                                      return Container(
+                                        height: 50,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: isSelected
+                                              ? theme.colorScheme.primary.withOpacity(0.1)
+                                              : Colors.transparent,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          minute.toString().padLeft(2, '0'),
+                                          style: TextStyle(
+                                            fontSize: isSelected ? 24 : 18,
+                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                            color: isSelected
+                                                ? theme.colorScheme.primary
+                                                : theme.colorScheme.onSurface.withOpacity(0.6),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    childCount: 12, // 0, 5, 10, ..., 55
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Botão confirmar
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Container(
+                      width: double.infinity,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            theme.colorScheme.primary,
+                            theme.colorScheme.primary.withOpacity(0.8),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: TextButton(
+                        onPressed: () {
+                          final formattedTime = '${selectedHour.toString().padLeft(2, '0')}:${selectedMinute.toString().padLeft(2, '0')}';
+                          controller.selectedTime.value = formattedTime;
+                          Get.back();
+                        },
+                        style: TextButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Confirmar',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildModernDetailRow(IconData icon, String label, String value, ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: Colors.grey[600]),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              size: 18,
+              color: theme.colorScheme.primary,
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -724,17 +1579,17 @@ class ScheduleAllScreen extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.6),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[800],
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -745,34 +1600,354 @@ class ScheduleAllScreen extends StatelessWidget {
     );
   }
 
-  void _showEditEventSheet(BuildContext context, ScheduleAllController controller) {
-    // Similar ao _showAddEventSheet mas para edição
-    // Implementação simplificada - usar a mesma estrutura do _showAddEventSheet
-    // mas com título "Editar Agendamento" e botão "Atualizar"
+  void _showModernEditEventSheet(BuildContext context, ScheduleAllController controller) {
+    final theme = Theme.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -8),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 20,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle bar
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.outline.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.edit_outlined,
+                        color: theme.colorScheme.primary,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Editar Agendamento',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          Text(
+                            'Modifique os detalhes do evento',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Campos do formulário
+                _buildModernTextField(
+                  controller: controller.titleController,
+                  label: 'Título do evento',
+                  hint: 'Ex: Reunião, Consulta, Compromisso...',
+                  icon: Icons.title_outlined,
+                  theme: theme,
+                ),
+                const SizedBox(height: 16),
+
+                _buildModernTextField(
+                  controller: controller.descriptionController,
+                  label: 'Descrição',
+                  hint: 'Adicione detalhes sobre o evento...',
+                  icon: Icons.description_outlined,
+                  maxLines: 3,
+                  theme: theme,
+                ),
+                const SizedBox(height: 16),
+
+                // Seleção de horário
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Horário',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () async {
+                        _showTimeSelector(context, controller, theme);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surface,
+                          border: Border.all(
+                            color: theme.colorScheme.outline.withOpacity(0.3),
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.access_time_outlined,
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Obx(() => Text(
+                                controller.selectedTime.value.isEmpty
+                                    ? 'Selecionar horário'
+                                    : controller.selectedTime.value,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: controller.selectedTime.value.isEmpty
+                                      ? theme.colorScheme.onSurface.withOpacity(0.6)
+                                      : theme.colorScheme.onSurface,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              )),
+                            ),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+
+                // Botão atualizar
+                Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.primary.withOpacity(0.8),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () {
+                        controller.updateSchedule();
+                        Get.back();
+                      },
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.update_outlined,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Atualizar Agendamento',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    ).whenComplete(() {
+      controller.clearFormFields();
+    });
   }
 
-  void _showDeleteConfirmation(BuildContext context, ScheduleAllController controller, ScheduleModel event) {
+  void _showModernDeleteConfirmation(BuildContext context, ScheduleAllController controller, ScheduleModel event) {
+    final theme = Theme.of(context);
+
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Excluir Agendamento'),
-          content: const Text('Tem certeza que deseja excluir este agendamento?'),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(),
-              child: const Text('Cancelar'),
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
+                ),
+              ],
             ),
-            ElevatedButton(
-              onPressed: () {
-                Get.back();
-                controller.deleteSchedule(event);
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Excluir', style: TextStyle(color: Colors.white)),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Ícone de alerta
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.delete_outline,
+                    color: Colors.red,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Título
+                Text(
+                  'Excluir Agendamento',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Descrição
+                Text(
+                  'Tem certeza que deseja excluir este agendamento? Esta ação não pode ser desfeita.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+
+                // Botões
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: theme.colorScheme.outline.withOpacity(0.3),
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: TextButton(
+                          onPressed: () => Get.back(),
+                          style: TextButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            'Cancelar',
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface.withOpacity(0.7),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            Get.back();
+                            controller.deleteSchedule(event);
+                          },
+                          style: TextButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Excluir',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         );
       },
     );

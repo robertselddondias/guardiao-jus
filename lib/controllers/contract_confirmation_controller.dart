@@ -43,14 +43,17 @@ class ContractConfirmationController extends GetxController {
   Rx<CreditCardUserModel> cardSelection = CreditCardUserModel().obs;
 
   // Para o PIX
-  RxString pixCode = ''.obs; // Código PIX fictício
+  RxString pixCode = ''.obs;
   var copyPixRequested = false.obs;
 
   RxString idTransaction = ''.obs;
-
   RxBool isPayment = false.obs;
-
   RxBool isLoading = false.obs;
+
+  // **🔹 Gerenciamento melhorado do listener**
+  StreamSubscription<QuerySnapshot>? _transactionListener;
+  Timer? _timeoutTimer;
+  static const int _listenerTimeoutMinutes = 10; // Timeout de 10 minutos
 
   @override
   void onInit() {
@@ -78,6 +81,13 @@ class ContractConfirmationController extends GetxController {
         _copyPixCode();
       }
     });
+  }
+
+  @override
+  void onClose() {
+    // **🔹 Cancela o listener e timer ao fechar o controller**
+    _cancelTransactionListener();
+    super.onClose();
   }
 
   Future<void> _confirmContract() async {
@@ -122,39 +132,51 @@ class ContractConfirmationController extends GetxController {
       showPaymentSheet.value = false;
     }
   }
-  
+
   Future<void> createPixTransaction(BuildContext context) async {
-    UserModel userModel = await _userRepository.getUserById();
+    try {
+      isLoading.value = true;
+      UserModel userModel = await _userRepository.getUserById();
 
-    idTransaction.value = await createTransactional();
+      idTransaction.value = await createTransactional();
 
-    if(userModel.customerId == null) {
-      String idCustomer = await _pagarMeService.createCustomer(
-          name: userModel.name!,
-          email: userModel.email!,
-          documentNumber: userModel.cpf!,
-          documentType: 'CPF',
-          phone: userModel.phone!,
-          uf: userModel.address!.uf!,
-          city: userModel.address!.city!,
-          zipCode: userModel.address!.cep!,
-          line1: userModel.address!.street!
-      );
-      userModel.customerId = idCustomer;
-      await FirebaseFirestore.instance.collection('users').doc(userModel.uid).set(
-          userModel.toMap(), SetOptions(merge: true));
-    }
+      if(userModel.customerId == null) {
+        String idCustomer = await _pagarMeService.createCustomer(
+            name: userModel.name!,
+            email: userModel.email!,
+            documentNumber: userModel.cpf!,
+            documentType: 'CPF',
+            phone: userModel.phone!,
+            uf: userModel.address!.uf!,
+            city: userModel.address!.city!,
+            zipCode: userModel.address!.cep!,
+            line1: userModel.address!.street!
+        );
+        userModel.customerId = idCustomer;
+        await FirebaseFirestore.instance.collection('users').doc(userModel.uid).set(
+            userModel.toMap(), SetOptions(merge: true));
+      }
 
-    http.Response response = await _pagarMeService.createPixTransaction(
-        amount: company.value!.monthlyValue!,
-        orderId: idTransaction.value,
-        customerId: userModel.customerId!);
-    if(response.statusCode == 200) {
-      Map<String, dynamic> bodyResponse = jsonDecode(response.body);
-      urlQrCode.value = bodyResponse['charges'][0]['last_transaction']['qr_code_url'];
-      pixCode.value = bodyResponse['charges'][0]['last_transaction']['qr_code'];
-      transactionPagarMeId.value = bodyResponse['charges'][0]['last_transaction']['id'];
-      listenToNewTransactions(context);
+      http.Response response = await _pagarMeService.createPixTransaction(
+          amount: company.value!.monthlyValue!,
+          orderId: idTransaction.value,
+          customerId: userModel.customerId!);
+
+      if(response.statusCode == 200) {
+        Map<String, dynamic> bodyResponse = jsonDecode(response.body);
+        urlQrCode.value = bodyResponse['charges'][0]['last_transaction']['qr_code_url'];
+        pixCode.value = bodyResponse['charges'][0]['last_transaction']['qr_code'];
+        transactionPagarMeId.value = bodyResponse['charges'][0]['last_transaction']['id'];
+
+        // **🔹 Inicia o listener otimizado após criar a transação PIX**
+        _startOptimizedTransactionListener(context);
+      } else {
+        SnackbarCustom.showError('Erro ao criar transação PIX. Tente novamente.');
+      }
+    } catch (e) {
+      SnackbarCustom.showError('Erro ao criar transação PIX: $e');
+    } finally {
+      isLoading.value = false;
     }
   }
 
@@ -169,21 +191,23 @@ class ContractConfirmationController extends GetxController {
           amount: int.parse(valor),
           orderId: idTransaction.value,
           creditCard: cardSelection.value);
+
       if (response.statusCode == 200) {
         Map<String, dynamic> bodyResponse = jsonDecode(response.body);
-        transactionPagarMeId.value =
-        bodyResponse['charges'][0]['last_transaction']['id'];
-        listenToNewTransactions(context);
+        transactionPagarMeId.value = bodyResponse['charges'][0]['last_transaction']['id'];
+
+        // **🔹 Inicia o listener otimizado após criar a transação de cartão**
+        // **Mantém o loading ativo durante todo o processo de monitoramento**
+        _startOptimizedTransactionListener(context);
       } else {
-        SnackbarCustom.showError(
-            'Ocorreu um erro ao realizar o pagamento. Altere o método do pagamento!');
+        isLoading.value = false;
+        SnackbarCustom.showError('Ocorreu um erro ao realizar o pagamento. Altere o método do pagamento!');
       }
-    }catch(e) {
-      SnackbarCustom.showError(
-          'Ocorreu um erro ao realizar o pagamento. Altere o método do pagamento!');
-    } finally {
+    } catch(e) {
       isLoading.value = false;
+      SnackbarCustom.showError('Ocorreu um erro ao realizar o pagamento. Altere o método do pagamento!');
     }
+    // **🔹 Removido o finally - loading só para quando a transação for processada**
   }
 
   void setPaymentMethod(String methodName) {
@@ -201,49 +225,237 @@ class ContractConfirmationController extends GetxController {
     }
   }
 
+  /// **🔹 LISTENER OTIMIZADO PARA TRANSAÇÕES**
+  void _startOptimizedTransactionListener(BuildContext context) {
+    // **Cancela listener anterior se existir**
+    _cancelTransactionListener();
 
-  // Método para escutar a coleção
-  Future<void> listenToNewTransactions(BuildContext context) async {
-    FirebaseFirestore.instance
-        .collection('transaction_pagarme')
-        .snapshots()
-        .listen((snapshot) async {
-      isLoading.value = true;
+    // **Configurar timeout para evitar listeners infinitos**
+    _timeoutTimer = Timer(Duration(minutes: _listenerTimeoutMinutes), () {
+      _cancelTransactionListener();
+
+      // **Navega para tela de erro por timeout (loading para na _navigateToResultScreen)**
+      if (Get.isDialogOpen == false) {
+        SnackbarCustom.showWarning(
+            'Tempo limite atingido. Verifique o status do pagamento posteriormente.',
+            title: 'Timeout'
+        );
+
+        isPayment.value = false;
+        _navigateToResultScreen();
+      }
+    });
+
+    try {
+      // **Query otimizada com filtros específicos**
+      _transactionListener = FirebaseFirestore.instance
+          .collection('transaction_pagarme')
+          .where('orderId', isEqualTo: idTransaction.value) // **Filtro específico**
+          .limit(1) // **Limita a 1 documento**
+          .snapshots()
+          .listen(
+        _handleTransactionUpdate,
+        onError: _handleTransactionError,
+        cancelOnError: false, // **Continua ouvindo mesmo com erros**
+      );
+
+      print('🎯 Listener iniciado para transação: ${idTransaction.value}');
+    } catch (e) {
+      _handleTransactionError(e);
+    }
+  }
+
+  /// **🔹 Manipula atualizações de transação**
+  Future<void> _handleTransactionUpdate(QuerySnapshot snapshot) async {
+    try {
       for (var change in snapshot.docChanges) {
-        // Verifica se o registro foi adicionado
-        if (change.type == DocumentChangeType.added) {
-          final newData = change.doc.data();
-          if (newData?['orderId'] == idTransaction.value) {
-            PaymentGatewayTransactionModel? gatewayTransactionModel = await _gatewayTransactionsRepository
-                .getTransactionById(idTransaction.value);
+        if (change.type == DocumentChangeType.added || change.type == DocumentChangeType.modified) {
+          final data = change.doc.data() as Map<String, dynamic>?;
 
-            gatewayTransactionModel?.transactionId = newData?['transactionId'];
-            gatewayTransactionModel?.status = newData?['status'];
-            if(newData?['status'] == 'paid') {
-              gatewayTransactionModel?.paid = true;
-              gatewayTransactionModel?.paymentMethod = newData?['paymentType'];
-              isPayment.value = true;
-              Preferences.setString('companyId', company.value!.id!);
-              _contractTransactionService.saveTransactionWithUser(idTransaction.value, gatewayTransactionModel!);
-            } else {
-              _contractTransactionService.saveTransaction(idTransaction.value, gatewayTransactionModel!);
-            }
+          if (data == null || data['orderId'] != idTransaction.value) {
+            continue; // **Ignora se não for nossa transação**
+          }
 
-            isLoading.value = false;
-            Get.offAll(() => FullScreenStatusScreen(
-              isSuccess: isPayment.value, // Define se é sucesso ou erro
-              message: isPayment.value ? "Seu convênio foi contratado com sucesso!" : 'Ocorreu um erro no pagamento. Verifique o metódo de pagamento e tente novamente.',
-            ));
+          print('🔄 Transação atualizada: ${data['status']}');
+
+          final status = data['status']?.toString().toLowerCase();
+
+          // **Verifica se é um status final**
+          if (status == 'paid' || status == 'failed' || status == 'canceled') {
+            await _processTransactionUpdate(data);
+
+            // **Para o listener após processar a transação**
+            _cancelTransactionListener();
+            break;
+          } else {
+            // **Status intermediário - apenas atualiza sem navegar**
+            print('⏳ Status intermediário: $status - continuando monitoramento...');
+            await _processTransactionUpdate(data);
           }
         }
       }
+    } catch (e) {
+      print('❌ Erro ao processar atualização: $e');
+      _handleTransactionError(e);
+    }
+  }
 
-    }, onError: (error) {
-      print('Erro ao monitorar a coleção: $error');
+  /// **🔹 Processa a atualização da transação**
+  Future<void> _processTransactionUpdate(Map<String, dynamic> data) async {
+    try {
+      // **🔹 Mantém loading ativo durante processamento**
+
+      PaymentGatewayTransactionModel? gatewayTransaction =
+      await _gatewayTransactionsRepository.getTransactionById(idTransaction.value);
+
+      if (gatewayTransaction == null) {
+        throw Exception('Transação não encontrada no banco local');
+      }
+
+      // **Atualiza dados da transação**
+      gatewayTransaction.transactionId = data['transactionId'];
+      gatewayTransaction.status = data['status'];
+
+      final status = data['status']?.toString().toLowerCase();
+
+      if (status == 'paid') {
+        gatewayTransaction.paid = true;
+        gatewayTransaction.paymentMethod = data['paymentType'];
+        isPayment.value = true;
+
+        // **Salva dados da empresa no preferences**
+        Preferences.setString('companyId', company.value!.id!);
+
+        await _contractTransactionService.saveTransactionWithUser(
+            idTransaction.value,
+            gatewayTransaction
+        );
+
+        SnackbarCustom.showSuccess('Pagamento aprovado com sucesso!');
+
+        // **Navega para tela de sucesso**
+        await _navigateToResultScreen();
+
+      } else if (status == 'failed' || status == 'canceled') {
+        isPayment.value = false;
+
+        await _contractTransactionService.saveTransaction(
+            idTransaction.value,
+            gatewayTransaction
+        );
+
+        SnackbarCustom.showError('Pagamento não aprovado. Status: $status');
+
+        // **Navega para tela de erro**
+        await _navigateToResultScreen();
+
+      } else {
+        // **Status intermediário (processing, pending, etc.)**
+        await _contractTransactionService.saveTransaction(
+            idTransaction.value,
+            gatewayTransaction
+        );
+
+        print('⏳ Status intermediário: $status - continuando aguardando...');
+        // **Não navega, apenas salva e continua monitorando**
+      }
+
+    } catch (e) {
+      print('❌ Erro ao processar transação: $e');
+      SnackbarCustom.showError('Erro ao processar resultado do pagamento: $e');
+
+      // **Em caso de erro, navega para tela de erro**
+      isPayment.value = false;
+      await _navigateToResultScreen();
+    }
+  }
+
+  /// **🔹 Navega para tela de resultado**
+  Future<void> _navigateToResultScreen() async {
+    if (Get.currentRoute.contains('FullScreenStatusScreen')) {
+      return; // **Evita navegação duplicada**
+    }
+
+    // **🔹 Para o loading antes de navegar**
+    isLoading.value = false;
+
+    final message = isPayment.value
+        ? "Seu convênio foi contratado com sucesso!"
+        : 'Ocorreu um erro no pagamento. Verifique o método de pagamento e tente novamente.';
+
+    await Get.offAll(() => FullScreenStatusScreen(
+      isSuccess: isPayment.value,
+      message: message,
+    ));
+  }
+
+  /// **🔹 Manipula erros do listener**
+  void _handleTransactionError(dynamic error) {
+    print('❌ Erro no listener de transação: $error');
+
+    if (!Get.isSnackbarOpen) {
       SnackbarCustom.showError(
-        'Não foi possível monitorar as transações.'
+          'Erro ao monitorar pagamento. Verifique o status posteriormente.',
+          title: 'Erro de Monitoramento'
       );
-    });
+    }
+
+    // **Para o listener**
+    _cancelTransactionListener();
+
+    // **Define como erro e navega (loading para na _navigateToResultScreen)**
+    isPayment.value = false;
+    _navigateToResultScreen();
+  }
+
+  /// **🔹 Cancela o listener e timer**
+  void _cancelTransactionListener() {
+    try {
+      _transactionListener?.cancel();
+      _transactionListener = null;
+
+      _timeoutTimer?.cancel();
+      _timeoutTimer = null;
+
+      print('🛑 Listener de transação cancelado');
+    } catch (e) {
+      print('⚠️ Erro ao cancelar listener: $e');
+    }
+  }
+
+  /// **🔹 Método público para cancelar listener manualmente**
+  void cancelPaymentMonitoring() {
+    _cancelTransactionListener();
+    isLoading.value = false; // **Para loading ao cancelar manualmente**
+    SnackbarCustom.showInfo('Monitoramento de pagamento cancelado');
+  }
+
+  /// **🔹 Verifica status da transação manualmente**
+  Future<void> checkTransactionStatusManually() async {
+    if (idTransaction.value.isEmpty) {
+      SnackbarCustom.showWarning('Nenhuma transação ativa para verificar');
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+
+      final doc = await FirebaseFirestore.instance
+          .collection('transaction_pagarme')
+          .where('orderId', isEqualTo: idTransaction.value)
+          .limit(1)
+          .get();
+
+      if (doc.docs.isNotEmpty) {
+        await _processTransactionUpdate(doc.docs.first.data());
+      } else {
+        SnackbarCustom.showInfo('Transação ainda está sendo processada...');
+        isLoading.value = false; // **Para loading se não encontrou**
+      }
+    } catch (e) {
+      SnackbarCustom.showError('Erro ao verificar status: $e');
+      isLoading.value = false; // **Para loading em caso de erro**
+    }
   }
 
   Future<String> createTransactional() async {
