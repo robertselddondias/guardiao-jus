@@ -10,28 +10,32 @@ class CustomWidgets {
     required TextEditingController controller,
     TextInputType keyboardType = TextInputType.text,
     int? maxLine,
-    TextCapitalization textCapitalization = TextCapitalization.none,
+    TextCapitalization textCapitalization = TextCapitalization.sentences, // Alterado padrão
     bool obscureText = false,
-    int? maxLenght
+    int? maxLenght,
+    TextInputAction? textInputAction, // Novo parâmetro
+    Function(String)? onSubmitted, // Novo parâmetro
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       maxLength: maxLenght,
-      textCapitalization: textCapitalization ?? TextCapitalization.none,
+      textCapitalization: textCapitalization,
       maxLines: maxLine ?? 1,
       obscureText: obscureText,
+      textInputAction: textInputAction, // Aplicando o parâmetro
+      onSubmitted: onSubmitted, // Aplicando o parâmetro
       decoration: InputDecoration(
-        labelText: label,
-        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surface,
-        border: _outlineBorder(context),
-        enabledBorder: _outlineBorder(context, opacity: 0.6),
-        focusedBorder: _outlineBorder(context, width: 1.8),
-        counterText: ''
+          labelText: label,
+          labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surface,
+          border: _outlineBorder(context),
+          enabledBorder: _outlineBorder(context, opacity: 0.6),
+          focusedBorder: _outlineBorder(context, width: 1.8),
+          counterText: ''
       ),
     );
   }
@@ -43,11 +47,15 @@ class CustomWidgets {
     required TextEditingController controller,
     required TextInputFormatter mask,
     TextInputType keyboardType = TextInputType.text,
+    TextInputAction? textInputAction, // Novo parâmetro
+    Function(String)? onSubmitted, // Novo parâmetro
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: [mask],
+      textInputAction: textInputAction, // Aplicando o parâmetro
+      onSubmitted: onSubmitted, // Aplicando o parâmetro
       decoration: InputDecoration(
         labelText: label,
         labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -67,7 +75,6 @@ class CustomWidgets {
     required BuildContext context, // Contexto obrigatório
     required String label,
     required TextEditingController controller,
-
   }) {
     return TextField(
       controller: controller,

@@ -21,21 +21,27 @@ class ProcessCreateScreen extends StatelessWidget {
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        FocusScope.of(context).unfocus();
-      },
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         backgroundColor: Colors.grey[50],
+        extendBodyBehindAppBar: true,
         appBar: AppBar(
-          title: const Text("Solicitação"),
-          backgroundColor: theme.colorScheme.primary,
-          foregroundColor: Colors.white,
-          centerTitle: true,
+          title: const Text("Nova Solicitação"),
+          backgroundColor: Colors.transparent,
           elevation: 0,
+          centerTitle: true,
+          foregroundColor: theme.colorScheme.primary,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.help_outline),
-              onPressed: () => _showHelpDialog(context),
+            Container(
+              margin: const EdgeInsets.only(right: 16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                icon: Icon(Icons.help_outline_rounded, color: theme.colorScheme.primary),
+                onPressed: () => _showHelpDialog(context),
+              ),
             ),
           ],
         ),
@@ -45,157 +51,290 @@ class ProcessCreateScreen extends StatelessWidget {
           }
 
           return SafeArea(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(
-                horizontal: screenSize.width > 600 ? screenSize.width * 0.08 : 16,
-                vertical: 16,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildProcessTypeSelector(controller, theme),
-                  const SizedBox(height: 16),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 400),
-                    child: controller.isExistingProcess.value
-                        ? _buildExistingProcessSection(controller, theme)
-                        : _buildNewProcessSection(context, controller, theme),
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 20),
+                      _buildHeader(theme),
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenSize.width > 600 ? screenSize.width * 0.08 : 20,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      children: [
+                        _buildProcessTypeSelector(controller, theme),
+                        const SizedBox(height: 20),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 400),
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0, 0.1),
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: controller.isExistingProcess.value
+                              ? _buildExistingProcessSection(controller, theme)
+                              : _buildNewProcessSection(context, controller, theme),
+                        ),
+                        const SizedBox(height: 100), // Espaço para o botão
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         }),
-        bottomNavigationBar: Container(
-          color: Colors.white,
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: ElevatedButton(
-                onPressed: controller.saveProcess,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                child: Text(
-                  'Salvar Processo',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
+        bottomNavigationBar: _buildBottomButton(controller, theme),
+      ),
+    );
+  }
+
+  Widget _buildHeader(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withOpacity(0.1),
+            theme.colorScheme.primary.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.assignment_turned_in_rounded,
+              color: theme.colorScheme.primary,
+              size: 24,
             ),
           ),
-        ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Solicitação Jurídica",
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Crie uma nova solicitação ou vincule a um processo existente.",
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildProcessTypeSelector(ProcessCreateController controller, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
-            offset: const Offset(0, 3),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.assignment_turned_in, color: theme.colorScheme.primary, size: 24),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Opções de Solicitação',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.tune_rounded,
+                    color: Colors.blue[700],
+                    size: 20,
                   ),
                 ),
-              ),
-            ],
-          ),
-          Container(
-            height: 1,
-            width: double.infinity,
-            color: Colors.grey[300],
-            margin: const EdgeInsets.symmetric(vertical: 16),
-          ),
+                const SizedBox(width: 12),
+                Text(
+                  'Tipo de Solicitação',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue[700],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
 
-          Obx(() => Row(
-            children: [
-              _buildRadioOption(
-                label: 'Nova Solicitação',
-                value: false,
-                groupValue: controller.isExistingProcess.value,
-                onChanged: (value) {
-                  controller.clearFields();
-                  controller.isExistingProcess.value = value!;
-                },
-              ),
-              const SizedBox(width: 12),
-              _buildRadioOption(
-                label: 'Processo Existente',
-                value: true,
-                groupValue: controller.isExistingProcess.value,
-                onChanged: (value) => controller.isExistingProcess.value = value!,
-              ),
-            ],
-          )),
-        ],
+            Obx(() => Column(
+              children: [
+                _buildModernRadioTile(
+                  title: 'Nova Solicitação',
+                  subtitle: 'Criar uma nova demanda jurídica',
+                  icon: Icons.add_circle_outline_rounded,
+                  value: false,
+                  groupValue: controller.isExistingProcess.value,
+                  onChanged: (value) {
+                    controller.clearFields();
+                    controller.isExistingProcess.value = value!;
+                  },
+                  theme: theme,
+                ),
+                const SizedBox(height: 12),
+                _buildModernRadioTile(
+                  title: 'Processo Existente',
+                  subtitle: 'Vincular a um processo em andamento',
+                  icon: Icons.link_rounded,
+                  value: true,
+                  groupValue: controller.isExistingProcess.value,
+                  onChanged: (value) => controller.isExistingProcess.value = value!,
+                  theme: theme,
+                ),
+              ],
+            )),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildRadioOption({
-    required String label,
+  Widget _buildModernRadioTile({
+    required String title,
+    required String subtitle,
+    required IconData icon,
     required bool value,
     required bool groupValue,
     required Function(bool?) onChanged,
+    required ThemeData theme,
   }) {
-    final theme = Theme.of(Get.context!);
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => onChanged(value),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: groupValue == value ? theme.colorScheme.primary : Colors.grey[300]!,
-              width: 2,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            color: groupValue == value ? theme.colorScheme.primary.withOpacity(0.1) : Colors.transparent,
+    final isSelected = groupValue == value;
+
+    return GestureDetector(
+      onTap: () => onChanged(value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? theme.colorScheme.primary.withOpacity(0.05)
+              : Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? theme.colorScheme.primary
+                : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
           ),
-          child: Center(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      fontWeight: groupValue == value ? FontWeight.bold : FontWeight.normal,
-                      color: groupValue == value ? theme.colorScheme.primary : Colors.grey[700],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? theme.colorScheme.primary.withOpacity(0.1)
+                    : Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : Colors.grey[600],
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: isSelected
+                          ? theme.colorScheme.primary
+                          : Colors.grey[800],
                     ),
                   ),
-                );
-              },
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: isSelected
+                          ? theme.colorScheme.primary.withOpacity(0.8)
+                          : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : Colors.grey[400]!,
+                  width: 2,
+                ),
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : Colors.transparent,
+              ),
+              child: isSelected
+                  ? Icon(
+                Icons.check_rounded,
+                size: 12,
+                color: Colors.white,
+              )
+                  : null,
+            ),
+          ],
         ),
       ),
     );
@@ -203,186 +342,308 @@ class ProcessCreateScreen extends StatelessWidget {
 
   Widget _buildNewProcessSection(BuildContext context, ProcessCreateController controller, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      key: const ValueKey('new_process'),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
-            offset: const Offset(0, 3),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.assignment, color: theme.colorScheme.primary, size: 24),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  "Cadastro de Pedido",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.description_rounded,
+                    color: Colors.green[700],
+                    size: 20,
                   ),
                 ),
-              ),
-            ],
-          ),
-          Container(
-            height: 1,
-            width: double.infinity,
-            color: Colors.grey[300],
-            margin: const EdgeInsets.symmetric(vertical: 16),
-          ),
-
-          Text(
-            "Tipo de Pedido",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+                const SizedBox(width: 12),
+                Text(
+                  "Informações da Solicitação",
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green[700],
+                  ),
+                ),
+              ],
             ),
+            const SizedBox(height: 20),
+
+            _buildProcessTypeSubSelector(controller, theme),
+            const SizedBox(height: 20),
+
+            CustomWidgets.buildTextField(
+              context: context,
+              label: 'Título da Solicitação',
+              controller: controller.titleController,
+              textCapitalization: TextCapitalization.sentences,
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+            ),
+            const SizedBox(height: 16),
+
+            CustomWidgets.buildTextField(
+              context: context,
+              label: 'Descrição Detalhada',
+              controller: controller.descriptionController,
+              maxLine: 4,
+              textCapitalization: TextCapitalization.sentences,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => FocusScope.of(context).unfocus(),
+            ),
+            const SizedBox(height: 20),
+
+            _buildFilesSection(context, controller, theme),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProcessTypeSubSelector(ProcessCreateController controller, ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Categoria do Pedido",
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Colors.grey[700],
           ),
-          const SizedBox(height: 8),
-          Obx(() => Row(
-            children: [
-              _buildRadioOption(
-                label: 'Proced. Administrativo',
+        ),
+        const SizedBox(height: 12),
+        Obx(() => Row(
+          children: [
+            Expanded(
+              child: _buildCategoryOption(
+                title: 'Procedimento\nAdministrativo',
+                icon: Icons.account_balance_rounded,
                 value: false,
                 groupValue: controller.isProcesso.value,
                 onChanged: (value) => controller.isProcesso.value = value!,
+                theme: theme,
               ),
-              const SizedBox(width: 12),
-              _buildRadioOption(
-                label: 'Processo Judicial',
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildCategoryOption(
+                title: 'Processo\nJudicial',
+                icon: Icons.gavel_rounded,
                 value: true,
                 groupValue: controller.isProcesso.value,
                 onChanged: (value) => controller.isProcesso.value = value!,
+                theme: theme,
               ),
-            ],
-          )),
-          const SizedBox(height: 16),
-
-          CustomWidgets.buildTextField(
-            context: context,
-            label: 'Título',
-            controller: controller.titleController,
-          ),
-          const SizedBox(height: 16),
-
-          CustomWidgets.buildTextField(
-            context: context,
-            label: 'Descrição',
-            controller: controller.descriptionController,
-            maxLine: 3,
-          ),
-          const SizedBox(height: 16),
-
-          GuardiaoWidget.buildArquivos(
-            context,
-            title: 'Arquivos',
-            onAddPressed: () => _showFileOptions(context, controller),
-            child: Obx(() =>
-            controller.files.isEmpty
-                ? _buildEmptyState(theme, 'Nenhum arquivo adicionado.', Icons.insert_drive_file)
-                : _buildFileList(controller, theme),
             ),
+          ],
+        )),
+      ],
+    );
+  }
+
+  Widget _buildCategoryOption({
+    required String title,
+    required IconData icon,
+    required bool value,
+    required bool groupValue,
+    required Function(bool?) onChanged,
+    required ThemeData theme,
+  }) {
+    final isSelected = groupValue == value;
+
+    return GestureDetector(
+      onTap: () => onChanged(value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? theme.colorScheme.primary.withOpacity(0.1)
+              : Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? theme.colorScheme.primary
+                : Colors.grey[300]!,
+            width: isSelected ? 2 : 1,
           ),
-        ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? theme.colorScheme.primary.withOpacity(0.15)
+                    : Colors.grey[200],
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : Colors.grey[600],
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: isSelected
+                    ? theme.colorScheme.primary
+                    : Colors.grey[700],
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildExistingProcessSection(ProcessCreateController controller, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      key: const ValueKey('existing_process'),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
-            offset: const Offset(0, 3),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Buscar Processo Existente',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          Row(
-            children: [
-              Expanded(
-                child: CustomWidgets.buildTextFieldMask(
-                  context: Get.context!,
-                  label: 'Número do Processo',
-                  controller: controller.processNumberController,
-                  keyboardType: TextInputType.number,
-                  mask: controller.processoMask,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: IconButton(
-                  onPressed: controller.fetchProcessByNumber,
-                  icon: const Icon(Icons.search, color: Colors.white, size: 24),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Obx(() {
-            if (controller.processoJuridico.value != null) {
-              return _buildProcessDetails(controller, theme);
-            } else {
-              return const SizedBox.shrink();
-            }
-          }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(ThemeData theme, String message, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              size: 48,
-              color: Colors.grey[400],
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.search_rounded,
+                    color: Colors.orange[700],
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Buscar Processo Existente',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange[700],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
+            const SizedBox(height: 20),
+
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue[200]!, width: 1),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, color: Colors.blue[700], size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Digite o número do processo para vinculá-lo',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.blue[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
+            const SizedBox(height: 16),
+
+            Row(
+              children: [
+                Expanded(
+                  child: CustomWidgets.buildTextFieldMask(
+                    context: Get.context!,
+                    label: 'Número do Processo',
+                    controller: controller.processNumberController,
+                    keyboardType: TextInputType.number,
+                    mask: controller.processoMask,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (_) {
+                      FocusScope.of(Get.context!).unfocus();
+                      controller.fetchProcessByNumber();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  height: 56,
+                  width: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        theme.colorScheme.primary,
+                        theme.colorScheme.primary.withOpacity(0.8),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    onPressed: controller.fetchProcessByNumber,
+                    icon: const Icon(Icons.search_rounded, color: Colors.white, size: 24),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            Obx(() {
+              if (controller.processoJuridico.value != null) {
+                return _buildProcessDetails(controller, theme);
+              } else {
+                return const SizedBox.shrink();
+              }
+            }),
           ],
         ),
       ),
@@ -393,156 +654,99 @@ class ProcessCreateScreen extends StatelessWidget {
     final process = controller.processoJuridico.value!;
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      padding: const EdgeInsets.all(16),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutBack,
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withOpacity(0.05),
+            theme.colorScheme.primary.withOpacity(0.02),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.2),
+          color: theme.colorScheme.primary.withOpacity(0.3),
+          width: 1,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Row(
-              children: [
-                Icon(Icons.article_outlined, color: theme.colorScheme.primary, size: 26),
-                const SizedBox(width: 8),
-                Text(
-                  "Dados do Processo",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
-            ),
+                child: Icon(
+                  Icons.article_rounded,
+                  color: theme.colorScheme.primary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                "Processo Encontrado",
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 20),
 
-          _buildDetailRow(theme, Icons.account_balance, process.tribunal),
-          _buildDetailRow(theme, Icons.book, process.classeNome),
-          _buildDetailRow(theme, Icons.format_list_bulleted, process.formatoNome),
-          _buildDetailRow(theme, Icons.gavel, process.orgaoJulgador.nome),
+          _buildDetailRow(theme, Icons.account_balance_rounded, 'Tribunal', process.tribunal),
+          _buildDetailRow(theme, Icons.book_rounded, 'Classe', process.classeNome),
+          _buildDetailRow(theme, Icons.format_list_bulleted_rounded, 'Formato', process.formatoNome),
+          _buildDetailRow(theme, Icons.gavel_rounded, 'Órgão Julgador', process.orgaoJulgador.nome),
 
-          const SizedBox(height: 12),
-
+          const SizedBox(height: 16),
           _buildAssuntosList(process.assuntos, theme),
         ],
       ),
     );
   }
 
-  void _showFileOptions(BuildContext context, ProcessCreateController controller) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              Text(
-                'Adicionar Arquivo',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              _buildOptionTile(
-                context,
-                icon: Icons.camera_alt,
-                label: 'Câmera',
-                onTap: () => _pickFile(context, controller, ImageSource.camera),
-              ),
-              _buildOptionTile(
-                context,
-                icon: Icons.photo_library,
-                label: 'Galeria',
-                onTap: () => _pickFile(context, controller, ImageSource.gallery),
-              ),
-              _buildOptionTile(
-                context,
-                icon: Icons.folder,
-                label: 'Arquivos',
-                onTap: () async {
-                  Navigator.of(context).pop();
-                  File? file = await FileUtils.pickFile();
-                  if (file != null) controller.addFile(file);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _pickFile(BuildContext context, ProcessCreateController controller, ImageSource source) async {
-    try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? xfile = await picker.pickImage(source: source);
-      if (xfile != null) {
-        controller.addFile(File(xfile.path));
-      } else {
-        SnackbarCustom.showInfo('Nenhum arquivo selecionado.');
-      }
-    } catch (e) {
-      SnackbarCustom.showError('Erro ao adicionar arquivo.');
-    } finally {
-      FocusManager.instance.primaryFocus?.unfocus();
-      Navigator.of(context).pop();
-    }
-  }
-
-  Widget _buildOptionTile(BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    return ListTile(
-      leading: Icon(icon, color: theme.colorScheme.primary),
-      title: Text(label, style: theme.textTheme.bodyLarge),
-      onTap: onTap,
-    );
-  }
-
-  Widget _buildDetailRow(ThemeData theme, IconData icon, String value) {
+  Widget _buildDetailRow(ThemeData theme, IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: theme.colorScheme.primary, size: 22),
-          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(icon, color: theme.colorScheme.primary, size: 16),
+          ),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -554,48 +758,52 @@ class ProcessCreateScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Row(
-            children: [
-              Icon(Icons.topic_rounded, color: theme.colorScheme.primary, size: 26),
-              const SizedBox(width: 8),
-              Text(
-                "Assuntos Relacionados",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.secondary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
               ),
-            ],
-          ),
+              child: Icon(
+                Icons.topic_rounded,
+                color: theme.colorScheme.secondary,
+                size: 16,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              "Assuntos",
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
+        const SizedBox(height: 8),
 
         Wrap(
-          spacing: 12,
+          spacing: 8,
           runSpacing: 8,
           children: assuntos.map((assunto) {
             return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.secondary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: theme.colorScheme.secondary.withOpacity(0.3),
+                  width: 1,
+                ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.label_important_rounded, color: theme.colorScheme.primary, size: 18),
-                  const SizedBox(width: 6),
-                  Text(
-                    assunto.nome,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                ],
+              child: Text(
+                assunto.nome,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.secondary,
+                ),
               ),
             );
           }).toList(),
@@ -604,33 +812,363 @@ class ProcessCreateScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildFilesSection(BuildContext context, ProcessCreateController controller, ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.attach_file_rounded,
+                    color: Colors.purple[700],
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  "Documentos",
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple[700],
+                  ),
+                ),
+              ],
+            ),
+            Container(
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: IconButton(
+                onPressed: () => _showFileOptions(context, controller),
+                icon: Icon(
+                  Icons.add_rounded,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        Obx(() => controller.files.isEmpty
+            ? _buildEmptyFilesState(theme)
+            : _buildFileList(controller, theme)
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyFilesState(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.cloud_upload_rounded,
+            size: 48,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Nenhum documento anexado',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Toque em + para adicionar documentos',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFileList(ProcessCreateController controller, ThemeData theme) {
-    return ListView.builder(
+    return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: controller.files.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final file = controller.files[index];
+        final fileName = file.path.split('/').last;
+
         return Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
           decoration: BoxDecoration(
             color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[200]!),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[200]!, width: 1),
           ),
           child: ListTile(
-            leading: Icon(Icons.insert_drive_file, color: theme.colorScheme.primary),
-            title: Text(
-              file.path.split('/').last,
-              style: TextStyle(fontSize: 14),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.insert_drive_file_rounded,
+                color: theme.colorScheme.primary,
+                size: 20,
+              ),
             ),
-            trailing: IconButton(
-              icon: Icon(Icons.delete, color: Colors.red),
-              onPressed: () => controller.removeFile(file),
+            title: Text(
+              fileName,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              _getFileSize(file),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+              ),
+            ),
+            trailing: Container(
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: IconButton(
+                icon: Icon(Icons.delete_outline_rounded, color: Colors.red[700], size: 20),
+                onPressed: () => controller.removeFile(file),
+              ),
             ),
           ),
         );
       },
+    );
+  }
+
+  String _getFileSize(File file) {
+    try {
+      final bytes = file.lengthSync();
+      if (bytes < 1024) return '$bytes B';
+      if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    } catch (e) {
+      return 'Tamanho desconhecido';
+    }
+  }
+
+  void _showFileOptions(BuildContext context, ProcessCreateController controller) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle indicator
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                Text(
+                  'Adicionar Documento',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildFileOptionButton(
+                      context,
+                      icon: Icons.camera_alt_rounded,
+                      label: 'Câmera',
+                      color: Colors.blue,
+                      onTap: () => _pickFile(context, controller, ImageSource.camera),
+                    ),
+                    _buildFileOptionButton(
+                      context,
+                      icon: Icons.photo_library_rounded,
+                      label: 'Galeria',
+                      color: Colors.green,
+                      onTap: () => _pickFile(context, controller, ImageSource.gallery),
+                    ),
+                    _buildFileOptionButton(
+                      context,
+                      icon: Icons.folder_rounded,
+                      label: 'Arquivos',
+                      color: Colors.orange,
+                      onTap: () async {
+                        Navigator.of(context).pop();
+                        // Remove o foco antes de abrir o seletor de arquivos
+                        FocusScope.of(context).unfocus();
+                        File? file = await FileUtils.pickFile();
+                        if (file != null) {
+                          controller.addFile(file);
+                          // Garante que o teclado não apareça após adicionar arquivo
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            FocusScope.of(context).unfocus();
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFileOptionButton(
+      BuildContext context, {
+        required IconData icon,
+        required String label,
+        required Color color,
+        required VoidCallback onTap,
+      }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 80,
+        child: Column(
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: color.withOpacity(0.3), width: 1),
+              ),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickFile(BuildContext context, ProcessCreateController controller, ImageSource source) async {
+    try {
+      // Remove o foco de qualquer campo antes de selecionar arquivo
+      FocusScope.of(context).unfocus();
+
+      final ImagePicker picker = ImagePicker();
+      final XFile? xfile = await picker.pickImage(source: source);
+      if (xfile != null) {
+        controller.addFile(File(xfile.path));
+        // Garante que o teclado não apareça após adicionar arquivo
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          FocusScope.of(context).unfocus();
+        });
+      } else {
+        SnackbarCustom.showInfo('Nenhum arquivo selecionado.');
+      }
+    } catch (e) {
+      SnackbarCustom.showError('Erro ao adicionar arquivo.');
+    } finally {
+      Navigator.of(context).pop();
+      // Remove o foco novamente para garantir que o teclado não apareça
+      Future.delayed(const Duration(milliseconds: 100), () {
+        FocusScope.of(context).unfocus();
+      });
+    }
+  }
+
+  Widget _buildBottomButton(ProcessCreateController controller, ThemeData theme) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Container(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton(
+              onPressed: controller.saveProcess,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.save_rounded, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Salvar Solicitação',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -643,7 +1181,7 @@ class ProcessCreateScreen extends StatelessWidget {
       context: context,
       barrierDismissible: true,
       barrierLabel: '',
-      transitionDuration: const Duration(milliseconds: 300),
+      transitionDuration: const Duration(milliseconds: 400),
       pageBuilder: (context, anim1, anim2) {
         return const SizedBox.shrink();
       },
@@ -651,107 +1189,142 @@ class ProcessCreateScreen extends StatelessWidget {
         return ScaleTransition(
           scale: CurvedAnimation(
             parent: animation,
-            curve: Curves.easeOutBack,
+            curve: Curves.elasticOut,
           ),
-          child: Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Container(
-              width: isLargeScreen ? screenSize.width * 0.5 : screenSize.width * 0.9,
-              padding: EdgeInsets.symmetric(
-                horizontal: isLargeScreen ? 24 : 16,
-                vertical: isLargeScreen ? 24 : 16,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TweenAnimationBuilder<double>(
-                    tween: Tween<double>(begin: 0.5, end: 1),
-                    duration: const Duration(milliseconds: 500),
-                    builder: (context, scale, child) {
-                      return Transform.scale(
-                        scale: scale,
-                        child: child,
-                      );
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(isLargeScreen ? 20 : 16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.article_outlined,
-                        size: isLargeScreen ? 60 : 50,
-                        color: theme.colorScheme.primary,
-                      ),
+          child: FadeTransition(
+            opacity: animation,
+            child: Dialog(
+              backgroundColor: Colors.transparent,
+              child: Container(
+                width: isLargeScreen ? screenSize.width * 0.5 : screenSize.width * 0.9,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 30,
+                      offset: const Offset(0, 10),
                     ),
+                  ],
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isLargeScreen ? 24 : 20,
+                    vertical: isLargeScreen ? 24 : 20,
                   ),
-                  const SizedBox(height: 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Ícone animado com gradiente
+                      TweenAnimationBuilder<double>(
+                        tween: Tween<double>(begin: 0, end: 1),
+                        duration: const Duration(milliseconds: 800),
+                        builder: (context, value, child) {
+                          return Transform.scale(
+                            scale: value,
+                            child: Container(
+                              padding: EdgeInsets.all(isLargeScreen ? 20 : 16),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    theme.colorScheme.primary,
+                                    theme.colorScheme.primary.withOpacity(0.7),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: theme.colorScheme.primary.withOpacity(0.3),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.article_rounded,
+                                size: isLargeScreen ? 50 : 40,
+                                color: Colors.white,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 24),
 
-                  Text(
-                    "Como funciona a criação de um novo processo?",
-                    style: TextStyle(
-                      fontSize: isLargeScreen ? 20 : 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-
-                  _buildHelpSection(
-                    theme,
-                    icon: Icons.account_balance,
-                    title: "Procedimento Administrativo",
-                    description: "Utilizado para questões internas, como sindicâncias, recursos administrativos e regularizações dentro da corporação. Não há envolvimento direto do Poder Judiciário.",
-                  ),
-
-                  _buildHelpSection(
-                    theme,
-                    icon: Icons.gavel,
-                    title: "Processo Judicial",
-                    description: "Ação movida no Judiciário para resolver disputas legais, garantir direitos ou contestar decisões. Pode envolver advogados, juízes e prazos legais.",
-                  ),
-
-                  _buildHelpSection(
-                    theme,
-                    icon: Icons.search,
-                    title: "Número de Processo Existente",
-                    description: "Caso já possua um número de processo em andamento, você pode vinculá-lo ao sistema para acompanhamento e atualizações.",
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        padding: EdgeInsets.symmetric(
-                          vertical: isLargeScreen ? 16 : 14,
+                      Text(
+                        "Como funciona a criação de solicitações?",
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
                         ),
-                        shape: RoundedRectangleBorder(
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      child: Text(
-                        "Entendi",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: isLargeScreen ? 18 : 16,
-                          color: Colors.white,
+                        child: Column(
+                          children: [
+                            _buildHelpSection(
+                              theme,
+                              icon: Icons.account_balance_rounded,
+                              title: "Procedimento Administrativo",
+                              description: "Para questões internas como sindicâncias, recursos administrativos e regularizações dentro da corporação.",
+                              isLargeScreen: isLargeScreen,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildHelpSection(
+                              theme,
+                              icon: Icons.gavel_rounded,
+                              title: "Processo Judicial",
+                              description: "Ação movida no Judiciário para resolver disputas legais, garantir direitos ou contestar decisões.",
+                              isLargeScreen: isLargeScreen,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildHelpSection(
+                              theme,
+                              icon: Icons.search_rounded,
+                              title: "Processo Existente",
+                              description: "Vincule um número de processo já em andamento para acompanhamento e atualizações.",
+                              isLargeScreen: isLargeScreen,
+                            ),
+                          ],
                         ),
                       ),
-                    ),
+                      const SizedBox(height: 24),
+
+                      Container(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Text(
+                            "Entendi",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: isLargeScreen ? 18 : 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -760,47 +1333,54 @@ class ProcessCreateScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHelpSection(ThemeData theme, {
-    required IconData icon,
-    required String title,
-    required String description,
-  }) {
-    final screenSize = MediaQuery.of(Get.context!).size;
-    final bool isLargeScreen = screenSize.width > 600;
-
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: isLargeScreen ? 10 : 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: theme.colorScheme.primary, size: isLargeScreen ? 32 : 28),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: isLargeScreen ? 18 : 16,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: isLargeScreen ? 16 : 14,
-                    color: Colors.grey[600],
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
+  Widget _buildHelpSection(
+      ThemeData theme, {
+        required IconData icon,
+        required String title,
+        required String description,
+        required bool isLargeScreen,
+      }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primary.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(10),
           ),
-        ],
-      ),
+          child: Icon(
+            icon,
+            color: theme.colorScheme.primary,
+            size: isLargeScreen ? 24 : 20,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontSize: isLargeScreen ? 16 : 14,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontSize: isLargeScreen ? 14 : 12,
+                  color: Colors.grey[600],
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

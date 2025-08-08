@@ -97,8 +97,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             title: 'Guardião Cliente',
             navigatorObservers: [observer],
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme, // Tema Claro
-            darkTheme: AppTheme.darkTheme, // Tema Escuro
+            theme: AppThemes.lightTheme, // Tema Claro
+            darkTheme: AppThemes.darkTheme, // Tema Escuro
             themeMode: themeController.themeMode.value, // Define o tema atual
             builder: (context, child) {
               return GestureDetector(

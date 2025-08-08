@@ -10,7 +10,7 @@ class SnackbarCustom {
     _showSnackbar(
       title: title,
       message: message,
-      backgroundColor: AppColors.success,
+      backgroundColor: AppColors.darkSuccess,
       icon: Icons.check_circle,
       textColor: Colors.white,
     );
@@ -21,7 +21,7 @@ class SnackbarCustom {
     _showSnackbar(
       title: title,
       message: message,
-      backgroundColor: AppColors.error,
+      backgroundColor: AppColors.darkError,
       icon: Icons.error_outline,
       textColor: Colors.white,
     );
@@ -32,7 +32,7 @@ class SnackbarCustom {
     _showSnackbar(
       title: title,
       message: message,
-      backgroundColor: AppColors.info,
+      backgroundColor: AppColors.darkInfo,
       icon: Icons.info_outline,
       textColor: Colors.white,
     );
@@ -43,7 +43,7 @@ class SnackbarCustom {
     _showSnackbar(
       title: title,
       message: message,
-      backgroundColor: AppColors.warning,
+      backgroundColor: AppColors.darkWarning,
       icon: Icons.warning_amber_rounded,
       textColor: Colors.white,
     );
