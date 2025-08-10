@@ -302,7 +302,6 @@ class HomeScreen extends StatelessWidget {
               color: theme.colorScheme.onBackground.withOpacity(0.7),
             ),
           ),
-          const SizedBox(height: 24),
 
           GridView.builder(
             shrinkWrap: true,

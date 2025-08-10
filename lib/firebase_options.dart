@@ -63,7 +63,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '953138134771',
     projectId: 'guardiao-jus',
     storageBucket: 'guardiao-jus.firebasestorage.app',
-    androidClientId: '953138134771-7djrcp8cggh5fom7nkirb36ko1mdl2ar.apps.googleusercontent.com',
+    androidClientId: '953138134771-7alegncdfpupl6pfonkm7rs1b7if4c0e.apps.googleusercontent.com',
     iosClientId: '953138134771-8cf7u4dpbddq6b5bnteiv2lpmuo3gd4a.apps.googleusercontent.com',
     iosBundleId: 'com.selddon.guardiao.cliente',
   );

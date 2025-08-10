@@ -6,6 +6,7 @@ import 'package:guardiao_cliente/models/assunto_model.dart';
 import 'package:guardiao_cliente/widgets/guardiao_widget.dart';
 import 'package:guardiao_cliente/widgets/snackbar_custom.dart';
 import 'package:guardiao_cliente/themes/custom_widgets.dart';
+import 'package:guardiao_cliente/themes/app_colors.dart';
 import 'package:guardiao_cliente/utils/file_utils.dart';
 import 'package:guardiao_cliente/widgets/loading_indicator.dart';
 import 'package:image_picker/image_picker.dart';
@@ -17,16 +18,24 @@ class ProcessCreateScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final ProcessCreateController controller = Get.put(ProcessCreateController());
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final screenSize = MediaQuery.of(context).size;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: Colors.grey[50],
+        backgroundColor: theme.colorScheme.background,
         extendBodyBehindAppBar: true,
         appBar: AppBar(
-          title: const Text("Nova Solicitação"),
+          title: Text(
+            "Nova Solicitação",
+            style: TextStyle(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+            ),
+          ),
           backgroundColor: Colors.transparent,
           elevation: 0,
           centerTitle: true,
@@ -35,11 +44,18 @@ class ProcessCreateScreen extends StatelessWidget {
             Container(
               margin: const EdgeInsets.only(right: 16),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
+                color: theme.colorScheme.primary.withOpacity(isDark ? 0.15 : 0.1),
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withOpacity(0.2),
+                  width: 1,
+                ),
               ),
               child: IconButton(
-                icon: Icon(Icons.help_outline_rounded, color: theme.colorScheme.primary),
+                icon: Icon(
+                  Icons.help_outline_rounded,
+                  color: theme.colorScheme.primary,
+                ),
                 onPressed: () => _showHelpDialog(context),
               ),
             ),
@@ -57,7 +73,7 @@ class ProcessCreateScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       const SizedBox(height: 20),
-                      _buildHeader(theme),
+                      _buildHeader(theme, isDark),
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -69,7 +85,7 @@ class ProcessCreateScreen extends StatelessWidget {
                   sliver: SliverToBoxAdapter(
                     child: Column(
                       children: [
-                        _buildProcessTypeSelector(controller, theme),
+                        _buildProcessTypeSelector(controller, theme, isDark),
                         const SizedBox(height: 20),
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 400),
@@ -86,8 +102,8 @@ class ProcessCreateScreen extends StatelessWidget {
                             );
                           },
                           child: controller.isExistingProcess.value
-                              ? _buildExistingProcessSection(controller, theme)
-                              : _buildNewProcessSection(context, controller, theme),
+                              ? _buildExistingProcessSection(controller, theme, isDark)
+                              : _buildNewProcessSection(context, controller, theme, isDark),
                         ),
                         const SizedBox(height: 100), // Espaço para o botão
                       ],
@@ -98,62 +114,97 @@ class ProcessCreateScreen extends StatelessWidget {
             ),
           );
         }),
-        bottomNavigationBar: _buildBottomButton(controller, theme),
+        bottomNavigationBar: _buildBottomButton(controller, theme, isDark),
       ),
     );
   }
 
-  Widget _buildHeader(ThemeData theme) {
+  Widget _buildHeader(ThemeData theme, bool isDark) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            theme.colorScheme.primary.withOpacity(0.1),
-            theme.colorScheme.primary.withOpacity(0.05),
+          colors: isDark
+              ? [
+            theme.colorScheme.primary.withOpacity(0.15),
+            theme.colorScheme.secondary.withOpacity(0.08),
+          ]
+              : [
+            theme.colorScheme.primary.withOpacity(0.08),
+            theme.colorScheme.secondary.withOpacity(0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.2),
+          color: theme.colorScheme.primary.withOpacity(isDark ? 0.3 : 0.15),
           width: 1,
         ),
+        boxShadow: isDark
+            ? [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ]
+            : [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary,
+                  theme.colorScheme.secondary,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Icon(
               Icons.assignment_turned_in_rounded,
-              color: theme.colorScheme.primary,
-              size: 24,
+              color: Colors.white,
+              size: 28,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "Solicitação Jurídica",
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: theme.colorScheme.primary,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   "Crie uma nova solicitação ou vincule a um processo existente.",
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.7),
-                    height: 1.3,
+                    height: 1.4,
                   ),
                 ),
               ],
@@ -164,49 +215,75 @@ class ProcessCreateScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProcessTypeSelector(ProcessCreateController controller, ThemeData theme) {
+  Widget _buildProcessTypeSelector(ProcessCreateController controller, ThemeData theme, bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.5),
+          width: 1,
+        ),
+        boxShadow: isDark
+            ? [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ]
+            : [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [AppColors.darkInfo, AppColors.darkInfo.withOpacity(0.7)]
+                          : [AppColors.lightInfo, AppColors.lightInfo.withOpacity(0.7)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isDark ? AppColors.darkInfo : AppColors.lightInfo).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Icon(
                     Icons.tune_rounded,
-                    color: Colors.blue[700],
-                    size: 20,
+                    color: Colors.white,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Text(
                   'Tipo de Solicitação',
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue[700],
+                    color: theme.colorScheme.primary,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             Obx(() => Column(
               children: [
@@ -221,8 +298,9 @@ class ProcessCreateScreen extends StatelessWidget {
                     controller.isExistingProcess.value = value!;
                   },
                   theme: theme,
+                  isDark: isDark,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 _buildModernRadioTile(
                   title: 'Processo Existente',
                   subtitle: 'Vincular a um processo em andamento',
@@ -231,6 +309,7 @@ class ProcessCreateScreen extends StatelessWidget {
                   groupValue: controller.isExistingProcess.value,
                   onChanged: (value) => controller.isExistingProcess.value = value!,
                   theme: theme,
+                  isDark: isDark,
                 ),
               ],
             )),
@@ -248,88 +327,148 @@ class ProcessCreateScreen extends StatelessWidget {
     required bool groupValue,
     required Function(bool?) onChanged,
     required ThemeData theme,
+    required bool isDark,
   }) {
     final isSelected = groupValue == value;
 
     return GestureDetector(
       onTap: () => onChanged(value),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+            colors: [
+              theme.colorScheme.primary.withOpacity(isDark ? 0.15 : 0.08),
+              theme.colorScheme.secondary.withOpacity(isDark ? 0.1 : 0.05),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+              : null,
           color: isSelected
-              ? theme.colorScheme.primary.withOpacity(0.05)
-              : Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
+              ? null
+              : theme.colorScheme.surfaceVariant.withOpacity(isDark ? 0.5 : 1.0),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
-                ? theme.colorScheme.primary
-                : Colors.grey[300]!,
+                ? theme.colorScheme.primary.withOpacity(isDark ? 0.6 : 0.8)
+                : theme.colorScheme.outline.withOpacity(isDark ? 0.3 : 0.5),
             width: isSelected ? 2 : 1,
           ),
+          boxShadow: isSelected
+              ? [
+            BoxShadow(
+              color: theme.colorScheme.primary.withOpacity(isDark ? 0.2 : 0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ]
+              : null,
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
+                gradient: isSelected
+                    ? LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.secondary,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+                    : null,
                 color: isSelected
-                    ? theme.colorScheme.primary.withOpacity(0.1)
-                    : Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
+                    ? null
+                    : theme.colorScheme.outline.withOpacity(isDark ? 0.2 : 0.3),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: isSelected
+                    ? [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+                    : null,
               ),
               child: Icon(
                 icon,
                 color: isSelected
-                    ? theme.colorScheme.primary
-                    : Colors.grey[600],
-                size: 20,
+                    ? Colors.white
+                    : theme.colorScheme.onSurface.withOpacity(0.6),
+                size: 24,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 20),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: theme.textTheme.titleSmall?.copyWith(
+                    style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isSelected
                           ? theme.colorScheme.primary
-                          : Colors.grey[800],
+                          : theme.colorScheme.onSurface,
+                      letterSpacing: 0.3,
                     ),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: isSelected
                           ? theme.colorScheme.primary.withOpacity(0.8)
-                          : Colors.grey[600],
+                          : theme.colorScheme.onSurface.withOpacity(0.6),
+                      height: 1.3,
                     ),
                   ),
                 ],
               ),
             ),
             Container(
-              width: 20,
-              height: 20,
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
+                gradient: isSelected
+                    ? LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.secondary,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+                    : null,
                 border: Border.all(
                   color: isSelected
-                      ? theme.colorScheme.primary
-                      : Colors.grey[400]!,
+                      ? Colors.transparent
+                      : theme.colorScheme.outline.withOpacity(isDark ? 0.4 : 0.6),
                   width: 2,
                 ),
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : Colors.transparent,
+                color: isSelected ? null : Colors.transparent,
+                boxShadow: isSelected
+                    ? [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+                    : null,
               ),
               child: isSelected
                   ? Icon(
                 Icons.check_rounded,
-                size: 12,
+                size: 14,
                 color: Colors.white,
               )
                   : null,
@@ -340,53 +479,79 @@ class ProcessCreateScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNewProcessSection(BuildContext context, ProcessCreateController controller, ThemeData theme) {
+  Widget _buildNewProcessSection(BuildContext context, ProcessCreateController controller, ThemeData theme, bool isDark) {
     return Container(
       key: const ValueKey('new_process'),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.5),
+          width: 1,
+        ),
+        boxShadow: isDark
+            ? [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ]
+            : [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [AppColors.darkSuccess, AppColors.darkSuccess.withOpacity(0.7)]
+                          : [AppColors.lightSuccess, AppColors.lightSuccess.withOpacity(0.7)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isDark ? AppColors.darkSuccess : AppColors.lightSuccess).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Icon(
                     Icons.description_rounded,
-                    color: Colors.green[700],
-                    size: 20,
+                    color: Colors.white,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Text(
                   "Informações da Solicitação",
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.green[700],
+                    color: theme.colorScheme.primary,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            _buildProcessTypeSubSelector(controller, theme),
-            const SizedBox(height: 20),
+            _buildProcessTypeSubSelector(controller, theme, isDark),
+            const SizedBox(height: 24),
 
             CustomWidgets.buildTextField(
               context: context,
@@ -396,7 +561,7 @@ class ProcessCreateScreen extends StatelessWidget {
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => FocusScope.of(context).nextFocus(),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             CustomWidgets.buildTextField(
               context: context,
@@ -407,27 +572,28 @@ class ProcessCreateScreen extends StatelessWidget {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => FocusScope.of(context).unfocus(),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            _buildFilesSection(context, controller, theme),
+            _buildFilesSection(context, controller, theme, isDark),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildProcessTypeSubSelector(ProcessCreateController controller, ThemeData theme) {
+  Widget _buildProcessTypeSubSelector(ProcessCreateController controller, ThemeData theme, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           "Categoria do Pedido",
-          style: theme.textTheme.titleSmall?.copyWith(
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: Colors.grey[700],
+            color: theme.colorScheme.onSurface,
+            letterSpacing: 0.3,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Obx(() => Row(
           children: [
             Expanded(
@@ -438,9 +604,10 @@ class ProcessCreateScreen extends StatelessWidget {
                 groupValue: controller.isProcesso.value,
                 onChanged: (value) => controller.isProcesso.value = value!,
                 theme: theme,
+                isDark: isDark,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: _buildCategoryOption(
                 title: 'Processo\nJudicial',
@@ -449,6 +616,7 @@ class ProcessCreateScreen extends StatelessWidget {
                 groupValue: controller.isProcesso.value,
                 onChanged: (value) => controller.isProcesso.value = value!,
                 theme: theme,
+                isDark: isDark,
               ),
             ),
           ],
@@ -464,54 +632,95 @@ class ProcessCreateScreen extends StatelessWidget {
     required bool groupValue,
     required Function(bool?) onChanged,
     required ThemeData theme,
+    required bool isDark,
   }) {
     final isSelected = groupValue == value;
 
     return GestureDetector(
       onTap: () => onChanged(value),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+            colors: [
+              theme.colorScheme.primary.withOpacity(isDark ? 0.2 : 0.1),
+              theme.colorScheme.secondary.withOpacity(isDark ? 0.15 : 0.08),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+              : null,
           color: isSelected
-              ? theme.colorScheme.primary.withOpacity(0.1)
-              : Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
+              ? null
+              : theme.colorScheme.surfaceVariant.withOpacity(isDark ? 0.3 : 0.8),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
-                ? theme.colorScheme.primary
-                : Colors.grey[300]!,
+                ? theme.colorScheme.primary.withOpacity(isDark ? 0.6 : 0.8)
+                : theme.colorScheme.outline.withOpacity(isDark ? 0.3 : 0.4),
             width: isSelected ? 2 : 1,
           ),
+          boxShadow: isSelected
+              ? [
+            BoxShadow(
+              color: theme.colorScheme.primary.withOpacity(isDark ? 0.2 : 0.15),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ]
+              : null,
         ),
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
+                gradient: isSelected
+                    ? LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary,
+                    theme.colorScheme.secondary,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+                    : null,
                 color: isSelected
-                    ? theme.colorScheme.primary.withOpacity(0.15)
-                    : Colors.grey[200],
-                borderRadius: BorderRadius.circular(10),
+                    ? null
+                    : theme.colorScheme.outline.withOpacity(isDark ? 0.2 : 0.3),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: isSelected
+                    ? [
+                  BoxShadow(
+                    color: theme.colorScheme.primary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+                    : null,
               ),
               child: Icon(
                 icon,
                 color: isSelected
-                    ? theme.colorScheme.primary
-                    : Colors.grey[600],
-                size: 24,
+                    ? Colors.white
+                    : theme.colorScheme.onSurface.withOpacity(0.6),
+                size: 28,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.bold,
                 color: isSelected
                     ? theme.colorScheme.primary
-                    : Colors.grey[700],
-                height: 1.2,
+                    : theme.colorScheme.onSurface,
+                height: 1.3,
+                letterSpacing: 0.2,
               ),
             ),
           ],
@@ -520,75 +729,123 @@ class ProcessCreateScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildExistingProcessSection(ProcessCreateController controller, ThemeData theme) {
+  Widget _buildExistingProcessSection(ProcessCreateController controller, ThemeData theme, bool isDark) {
     return Container(
       key: const ValueKey('existing_process'),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.5),
+          width: 1,
+        ),
+        boxShadow: isDark
+            ? [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ]
+            : [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [AppColors.darkWarning, AppColors.darkWarning.withOpacity(0.7)]
+                          : [AppColors.lightWarning, AppColors.lightWarning.withOpacity(0.7)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (isDark ? AppColors.darkWarning : AppColors.lightWarning).withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Icon(
                     Icons.search_rounded,
-                    color: Colors.orange[700],
-                    size: 20,
+                    color: Colors.white,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Text(
                   'Buscar Processo Existente',
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.orange[700],
+                    color: theme.colorScheme.primary,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue[200]!, width: 1),
+                gradient: LinearGradient(
+                  colors: [
+                    (isDark ? AppColors.darkInfo : AppColors.lightInfo).withOpacity(isDark ? 0.15 : 0.1),
+                    (isDark ? AppColors.darkInfo : AppColors.lightInfo).withOpacity(isDark ? 0.1 : 0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: (isDark ? AppColors.darkInfo : AppColors.lightInfo).withOpacity(isDark ? 0.3 : 0.2),
+                  width: 1,
+                ),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline_rounded, color: Colors.blue[700], size: 20),
-                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (isDark ? AppColors.darkInfo : AppColors.lightInfo).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.info_outline_rounded,
+                      color: isDark ? AppColors.darkInfo : AppColors.lightInfo,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Digite o número do processo para vinculá-lo',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.blue[700],
-                        fontWeight: FontWeight.w500,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isDark ? AppColors.darkInfo : AppColors.lightInfo,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             Row(
               children: [
@@ -606,7 +863,7 @@ class ProcessCreateScreen extends StatelessWidget {
                     },
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Container(
                   height: 56,
                   width: 56,
@@ -614,17 +871,17 @@ class ProcessCreateScreen extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: [
                         theme.colorScheme.primary,
-                        theme.colorScheme.primary.withOpacity(0.8),
+                        theme.colorScheme.secondary,
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
+                        color: theme.colorScheme.primary.withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
@@ -639,7 +896,7 @@ class ProcessCreateScreen extends StatelessWidget {
 
             Obx(() {
               if (controller.processoJuridico.value != null) {
-                return _buildProcessDetails(controller, theme);
+                return _buildProcessDetails(controller, theme, isDark);
               } else {
                 return const SizedBox.shrink();
               }
@@ -650,27 +907,34 @@ class ProcessCreateScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProcessDetails(ProcessCreateController controller, ThemeData theme) {
+  Widget _buildProcessDetails(ProcessCreateController controller, ThemeData theme, bool isDark) {
     final process = controller.processoJuridico.value!;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeOutBack,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            theme.colorScheme.primary.withOpacity(0.05),
-            theme.colorScheme.primary.withOpacity(0.02),
+            theme.colorScheme.primary.withOpacity(isDark ? 0.15 : 0.08),
+            theme.colorScheme.secondary.withOpacity(isDark ? 0.1 : 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.3),
+          color: theme.colorScheme.primary.withOpacity(isDark ? 0.4 : 0.3),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(isDark ? 0.2 : 0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -678,56 +942,82 @@ class ProcessCreateScreen extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    colors: [
+                      theme.colorScheme.primary,
+                      theme.colorScheme.secondary,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: theme.colorScheme.primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Icon(
                   Icons.article_rounded,
-                  color: theme.colorScheme.primary,
-                  size: 24,
+                  color: Colors.white,
+                  size: 26,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Text(
                 "Processo Encontrado",
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.primary,
+                  letterSpacing: 0.5,
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 24),
+
+          _buildDetailRow(theme, isDark, Icons.account_balance_rounded, 'Tribunal', process.tribunal),
+          _buildDetailRow(theme, isDark, Icons.book_rounded, 'Classe', process.classeNome),
+          _buildDetailRow(theme, isDark, Icons.format_list_bulleted_rounded, 'Formato', process.formatoNome),
+          _buildDetailRow(theme, isDark, Icons.gavel_rounded, 'Órgão Julgador', process.orgaoJulgador.nome),
+
           const SizedBox(height: 20),
-
-          _buildDetailRow(theme, Icons.account_balance_rounded, 'Tribunal', process.tribunal),
-          _buildDetailRow(theme, Icons.book_rounded, 'Classe', process.classeNome),
-          _buildDetailRow(theme, Icons.format_list_bulleted_rounded, 'Formato', process.formatoNome),
-          _buildDetailRow(theme, Icons.gavel_rounded, 'Órgão Julgador', process.orgaoJulgador.nome),
-
-          const SizedBox(height: 16),
-          _buildAssuntosList(process.assuntos, theme),
+          _buildAssuntosList(process.assuntos, theme, isDark),
         ],
       ),
     );
   }
 
-  Widget _buildDetailRow(ThemeData theme, IconData icon, String label, String value) {
+  Widget _buildDetailRow(ThemeData theme, bool isDark, IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary.withOpacity(isDark ? 0.3 : 0.15),
+                  theme.colorScheme.secondary.withOpacity(isDark ? 0.2 : 0.1),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: theme.colorScheme.primary, size: 16),
+            child: Icon(
+              icon,
+              color: theme.colorScheme.primary,
+              size: 18,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -735,15 +1025,18 @@ class ProcessCreateScreen extends StatelessWidget {
                 Text(
                   label,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   value,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: theme.colorScheme.onSurface,
+                    letterSpacing: 0.2,
                   ),
                 ),
               ],
@@ -754,55 +1047,78 @@ class ProcessCreateScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAssuntosList(List<AssuntoModel> assuntos, ThemeData theme) {
+  Widget _buildAssuntosList(List<AssuntoModel> assuntos, ThemeData theme, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: theme.colorScheme.secondary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.tertiary.withOpacity(isDark ? 0.3 : 0.15),
+                    theme.colorScheme.tertiary.withOpacity(isDark ? 0.2 : 0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 Icons.topic_rounded,
-                color: theme.colorScheme.secondary,
-                size: 16,
+                color: theme.colorScheme.tertiary,
+                size: 18,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             Text(
               "Assuntos",
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.7),
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
 
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          spacing: 10,
+          runSpacing: 10,
           children: assuntos.map((assunto) {
             return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: theme.colorScheme.secondary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.tertiary.withOpacity(isDark ? 0.2 : 0.1),
+                    theme.colorScheme.tertiary.withOpacity(isDark ? 0.15 : 0.08),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: theme.colorScheme.secondary.withOpacity(0.3),
+                  color: theme.colorScheme.tertiary.withOpacity(isDark ? 0.4 : 0.3),
                   width: 1,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: theme.colorScheme.tertiary.withOpacity(isDark ? 0.1 : 0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: Text(
                 assunto.nome,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.secondary,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.tertiary,
+                  letterSpacing: 0.2,
                 ),
               ),
             );
@@ -812,7 +1128,7 @@ class ProcessCreateScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFilesSection(BuildContext context, ProcessCreateController controller, ThemeData theme) {
+  Widget _buildFilesSection(BuildContext context, ProcessCreateController controller, ThemeData theme, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -822,80 +1138,118 @@ class ProcessCreateScreen extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.purple.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    gradient: LinearGradient(
+                      colors: isDark
+                          ? [Colors.purple.shade400, Colors.purple.shade300]
+                          : [Colors.purple.shade600, Colors.purple.shade500],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.purple.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Icon(
                     Icons.attach_file_rounded,
-                    color: Colors.purple[700],
-                    size: 20,
+                    color: Colors.white,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
                 Text(
                   "Documentos",
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.purple[700],
+                    color: theme.colorScheme.primary,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ],
             ),
             Container(
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary.withOpacity(isDark ? 0.2 : 0.15),
+                    theme.colorScheme.secondary.withOpacity(isDark ? 0.15 : 0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: theme.colorScheme.primary.withOpacity(isDark ? 0.3 : 0.2),
+                  width: 1,
+                ),
               ),
               child: IconButton(
-                onPressed: () => _showFileOptions(context, controller),
+                onPressed: () => _showFileOptions(context, controller, theme, isDark),
                 icon: Icon(
                   Icons.add_rounded,
                   color: theme.colorScheme.primary,
+                  size: 24,
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
 
         Obx(() => controller.files.isEmpty
-            ? _buildEmptyFilesState(theme)
-            : _buildFileList(controller, theme)
+            ? _buildEmptyFilesState(theme, isDark)
+            : _buildFileList(controller, theme, isDark)
         ),
       ],
     );
   }
 
-  Widget _buildEmptyFilesState(ThemeData theme) {
+  Widget _buildEmptyFilesState(ThemeData theme, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
+        color: theme.colorScheme.surfaceVariant.withOpacity(isDark ? 0.3 : 0.8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(isDark ? 0.3 : 0.4),
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
-          Icon(
-            Icons.cloud_upload_rounded,
-            size: 48,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Nenhum documento anexado',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.outline.withOpacity(isDark ? 0.2 : 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.cloud_upload_rounded,
+              size: 48,
+              color: theme.colorScheme.onSurface.withOpacity(0.4),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 16),
+          Text(
+            'Nenhum documento anexado',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.7),
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 6),
           Text(
             'Toque em + para adicionar documentos',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: Colors.grey[500],
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.5),
+              letterSpacing: 0.2,
             ),
           ),
         ],
@@ -903,57 +1257,92 @@ class ProcessCreateScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFileList(ProcessCreateController controller, ThemeData theme) {
+  Widget _buildFileList(ProcessCreateController controller, ThemeData theme, bool isDark) {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: controller.files.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final file = controller.files[index];
         final fileName = file.path.split('/').last;
 
         return Container(
           decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[200]!, width: 1),
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: theme.colorScheme.outline.withOpacity(isDark ? 0.3 : 0.4),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             leading: Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  colors: [
+                    theme.colorScheme.primary.withOpacity(isDark ? 0.3 : 0.15),
+                    theme.colorScheme.secondary.withOpacity(isDark ? 0.2 : 0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 Icons.insert_drive_file_rounded,
                 color: theme.colorScheme.primary,
-                size: 20,
+                size: 22,
               ),
             ),
             title: Text(
               fileName,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+                letterSpacing: 0.2,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
             subtitle: Text(
               _getFileSize(file),
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
+                letterSpacing: 0.2,
               ),
             ),
             trailing: Container(
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [AppColors.darkError.withOpacity(0.2), AppColors.darkError.withOpacity(0.15)]
+                      : [AppColors.lightError.withOpacity(0.1), AppColors.lightError.withOpacity(0.08)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: (isDark ? AppColors.darkError : AppColors.lightError).withOpacity(0.3),
+                  width: 1,
+                ),
               ),
               child: IconButton(
-                icon: Icon(Icons.delete_outline_rounded, color: Colors.red[700], size: 20),
+                icon: Icon(
+                  Icons.delete_outline_rounded,
+                  color: isDark ? AppColors.darkError : AppColors.lightError,
+                  size: 20,
+                ),
                 onPressed: () => controller.removeFile(file),
               ),
             ),
@@ -974,43 +1363,52 @@ class ProcessCreateScreen extends StatelessWidget {
     }
   }
 
-  void _showFileOptions(BuildContext context, ProcessCreateController controller) {
+  void _showFileOptions(BuildContext context, ProcessCreateController controller, ThemeData theme, bool isDark) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(28),
+              topRight: Radius.circular(28),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.4 : 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -8),
+              ),
+            ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Handle indicator
                 Container(
-                  width: 40,
-                  height: 4,
+                  width: 50,
+                  height: 5,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: theme.colorScheme.outline.withOpacity(isDark ? 0.4 : 0.3),
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
                 Text(
                   'Adicionar Documento',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.primary,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -1019,21 +1417,25 @@ class ProcessCreateScreen extends StatelessWidget {
                       context,
                       icon: Icons.camera_alt_rounded,
                       label: 'Câmera',
-                      color: Colors.blue,
+                      color: isDark ? AppColors.darkInfo : AppColors.lightInfo,
                       onTap: () => _pickFile(context, controller, ImageSource.camera),
+                      theme: theme,
+                      isDark: isDark,
                     ),
                     _buildFileOptionButton(
                       context,
                       icon: Icons.photo_library_rounded,
                       label: 'Galeria',
-                      color: Colors.green,
+                      color: isDark ? AppColors.darkSuccess : AppColors.lightSuccess,
                       onTap: () => _pickFile(context, controller, ImageSource.gallery),
+                      theme: theme,
+                      isDark: isDark,
                     ),
                     _buildFileOptionButton(
                       context,
                       icon: Icons.folder_rounded,
                       label: 'Arquivos',
-                      color: Colors.orange,
+                      color: isDark ? AppColors.darkWarning : AppColors.lightWarning,
                       onTap: () async {
                         Navigator.of(context).pop();
                         // Remove o foco antes de abrir o seletor de arquivos
@@ -1047,10 +1449,12 @@ class ProcessCreateScreen extends StatelessWidget {
                           });
                         }
                       },
+                      theme: theme,
+                      isDark: isDark,
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -1065,28 +1469,45 @@ class ProcessCreateScreen extends StatelessWidget {
         required String label,
         required Color color,
         required VoidCallback onTap,
+        required ThemeData theme,
+        required bool isDark,
       }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 80,
+        width: 90,
         child: Column(
           children: [
             Container(
-              width: 60,
-              height: 60,
+              width: 70,
+              height: 70,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                gradient: LinearGradient(
+                  colors: [
+                    color,
+                    color.withOpacity(0.7),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: color.withOpacity(0.3), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-              child: Icon(icon, color: color, size: 28),
+              child: Icon(icon, color: Colors.white, size: 32),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w500,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface,
+                letterSpacing: 0.2,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1123,44 +1544,70 @@ class ProcessCreateScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildBottomButton(ProcessCreateController controller, ThemeData theme) {
+  Widget _buildBottomButton(ProcessCreateController controller, ThemeData theme, bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+            blurRadius: 25,
+            offset: const Offset(0, -8),
           ),
         ],
+        border: Border(
+          top: BorderSide(
+            color: theme.colorScheme.outline.withOpacity(isDark ? 0.2 : 0.1),
+            width: 1,
+          ),
+        ),
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           child: Container(
             width: double.infinity,
-            height: 52,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary,
+                  theme.colorScheme.secondary,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: theme.colorScheme.primary.withOpacity(0.4),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
             child: ElevatedButton(
               onPressed: controller.saveProcess,
               style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.primary,
+                backgroundColor: Colors.transparent,
                 foregroundColor: Colors.white,
                 elevation: 0,
+                shadowColor: Colors.transparent,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                 ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.save_rounded, size: 20),
-                  const SizedBox(width: 8),
+                  Icon(Icons.save_rounded, size: 22),
+                  const SizedBox(width: 12),
                   Text(
                     'Salvar Solicitação',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ],
@@ -1174,6 +1621,7 @@ class ProcessCreateScreen extends StatelessWidget {
 
   void _showHelpDialog(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final screenSize = MediaQuery.of(context).size;
     final bool isLargeScreen = screenSize.width > 600;
 
@@ -1181,7 +1629,7 @@ class ProcessCreateScreen extends StatelessWidget {
       context: context,
       barrierDismissible: true,
       barrierLabel: '',
-      transitionDuration: const Duration(milliseconds: 400),
+      transitionDuration: const Duration(milliseconds: 500),
       pageBuilder: (context, anim1, anim2) {
         return const SizedBox.shrink();
       },
@@ -1198,20 +1646,24 @@ class ProcessCreateScreen extends StatelessWidget {
               child: Container(
                 width: isLargeScreen ? screenSize.width * 0.5 : screenSize.width * 0.9,
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: theme.colorScheme.outline.withOpacity(isDark ? 0.3 : 0.2),
+                    width: 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
-                      blurRadius: 30,
-                      offset: const Offset(0, 10),
+                      color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                      blurRadius: 40,
+                      offset: const Offset(0, 16),
                     ),
                   ],
                 ),
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: isLargeScreen ? 24 : 20,
-                    vertical: isLargeScreen ? 24 : 20,
+                    horizontal: isLargeScreen ? 32 : 24,
+                    vertical: isLargeScreen ? 32 : 24,
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -1224,12 +1676,12 @@ class ProcessCreateScreen extends StatelessWidget {
                           return Transform.scale(
                             scale: value,
                             child: Container(
-                              padding: EdgeInsets.all(isLargeScreen ? 20 : 16),
+                              padding: EdgeInsets.all(isLargeScreen ? 24 : 20),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
                                     theme.colorScheme.primary,
-                                    theme.colorScheme.primary.withOpacity(0.7),
+                                    theme.colorScheme.secondary,
                                   ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
@@ -1237,59 +1689,74 @@ class ProcessCreateScreen extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: theme.colorScheme.primary.withOpacity(0.3),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 5),
+                                    color: theme.colorScheme.primary.withOpacity(0.4),
+                                    blurRadius: 25,
+                                    offset: const Offset(0, 10),
                                   ),
                                 ],
                               ),
                               child: Icon(
                                 Icons.article_rounded,
-                                size: isLargeScreen ? 50 : 40,
+                                size: isLargeScreen ? 54 : 44,
                                 color: Colors.white,
                               ),
                             ),
                           );
                         },
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
                       Text(
                         "Como funciona a criação de solicitações?",
-                        style: theme.textTheme.titleLarge?.copyWith(
+                        style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: theme.colorScheme.primary,
+                          letterSpacing: 0.5,
                         ),
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(12),
+                          gradient: LinearGradient(
+                            colors: [
+                              theme.colorScheme.primary.withOpacity(isDark ? 0.1 : 0.05),
+                              theme.colorScheme.secondary.withOpacity(isDark ? 0.08 : 0.03),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: theme.colorScheme.primary.withOpacity(isDark ? 0.2 : 0.15),
+                            width: 1,
+                          ),
                         ),
                         child: Column(
                           children: [
                             _buildHelpSection(
                               theme,
+                              isDark,
                               icon: Icons.account_balance_rounded,
                               title: "Procedimento Administrativo",
                               description: "Para questões internas como sindicâncias, recursos administrativos e regularizações dentro da corporação.",
                               isLargeScreen: isLargeScreen,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 20),
                             _buildHelpSection(
                               theme,
+                              isDark,
                               icon: Icons.gavel_rounded,
                               title: "Processo Judicial",
                               description: "Ação movida no Judiciário para resolver disputas legais, garantir direitos ou contestar decisões.",
                               isLargeScreen: isLargeScreen,
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 20),
                             _buildHelpSection(
                               theme,
+                              isDark,
                               icon: Icons.search_rounded,
                               title: "Processo Existente",
                               description: "Vincule um número de processo já em andamento para acompanhamento e atualizações.",
@@ -1298,19 +1765,38 @@ class ProcessCreateScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
 
                       Container(
                         width: double.infinity,
-                        height: 48,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              theme.colorScheme.primary,
+                              theme.colorScheme.secondary,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withOpacity(0.4),
+                              blurRadius: 15,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
                         child: ElevatedButton(
                           onPressed: () => Navigator.of(context).pop(),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.primary,
+                            backgroundColor: Colors.transparent,
                             foregroundColor: Colors.white,
                             elevation: 0,
+                            shadowColor: Colors.transparent,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(18),
                             ),
                           ),
                           child: Text(
@@ -1318,6 +1804,7 @@ class ProcessCreateScreen extends StatelessWidget {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: isLargeScreen ? 18 : 16,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
@@ -1334,7 +1821,8 @@ class ProcessCreateScreen extends StatelessWidget {
   }
 
   Widget _buildHelpSection(
-      ThemeData theme, {
+      ThemeData theme,
+      bool isDark, {
         required IconData icon,
         required String title,
         required String description,
@@ -1344,37 +1832,53 @@ class ProcessCreateScreen extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(10),
+            gradient: LinearGradient(
+              colors: [
+                theme.colorScheme.primary.withOpacity(isDark ? 0.3 : 0.2),
+                theme.colorScheme.secondary.withOpacity(isDark ? 0.2 : 0.15),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withOpacity(0.2),
+                blurRadius: 6,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Icon(
             icon,
             color: theme.colorScheme.primary,
-            size: isLargeScreen ? 24 : 20,
+            size: isLargeScreen ? 26 : 22,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontSize: isLargeScreen ? 16 : 14,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontSize: isLargeScreen ? 17 : 15,
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.primary,
+                  letterSpacing: 0.3,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               Text(
                 description,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontSize: isLargeScreen ? 14 : 12,
-                  color: Colors.grey[600],
-                  height: 1.4,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: isLargeScreen ? 15 : 13,
+                  color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  height: 1.5,
+                  letterSpacing: 0.2,
                 ),
               ),
             ],
