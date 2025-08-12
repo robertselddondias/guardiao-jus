@@ -156,8 +156,10 @@ class RapScreen extends StatelessWidget {
 
   Future<void> _pickDocument(BuildContext context, RapController controller) async {
     try {
-      // Implementar seleção de documento
-      SnackbarCustom.showInfo('Funcionalidade de documento em breve.');
+      Navigator.of(context).pop();
+      File? file = await FileUtils.pickFile();
+      if (file != null) controller.addFile(file);
+      FocusManager.instance.primaryFocus?.unfocus();
     } catch (e) {
       SnackbarCustom.showError('Erro ao selecionar documento.');
     } finally {
