@@ -64,7 +64,7 @@ class LoginScreen extends StatelessWidget {
 
                 // 🔹 Subtítulo
                 Text(
-                  "Bem-vindo! Estamos felizes em ter você de aqui",
+                  "Bem-vindo! Estamos felizes em ter você aqui",
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     fontSize: screenWidth * 0.04,

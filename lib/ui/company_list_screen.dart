@@ -16,144 +16,25 @@ class CompanyListScreen extends StatelessWidget {
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.colorScheme.primary.withOpacity(0.05),
-              theme.colorScheme.surface,
-            ],
-            stops: const [0.0, 0.3],
-          ),
-        ),
-        child: CustomScrollView(
-          slivers: [
-            // AppBar moderna com gradiente
-            SliverAppBar(
-              expandedHeight: screenSize.height * 0.15,
-              floating: false,
-              pinned: true,
-              elevation: 0,
-              backgroundColor: theme.colorScheme.primary,
-              foregroundColor: theme.colorScheme.onPrimary,
-              flexibleSpace: FlexibleSpaceBar(
-                centerTitle: true,
-                title: Text(
-                  'Convênios Disponíveis',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 4,
-                      ),
-                    ],
-                  ),
-                ),
-                background: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        theme.colorScheme.primary,
-                        theme.colorScheme.primary.withOpacity(0.8),
-                      ],
-                    ),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.business_center_outlined,
-                      size: 64,
-                      color: Colors.white.withOpacity(0.3),
-                    ),
-                  ),
-                ),
-              ),
-              actions: [
-                Container(
-                  margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.help_outline, color: Colors.white),
-                    onPressed: () => _showModernHelpDialog(context),
-                  ),
-                ),
-              ],
-            ),
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header fixo moderno
+            _buildModernHeader(context, theme),
 
             // Conteúdo principal
-            SliverToBoxAdapter(
+            Expanded(
               child: Obx(() {
                 if (controller.isLoading.value) {
-                  return Container(
-                    height: screenSize.height * 0.6,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(theme.colorScheme.primary),
-                            strokeWidth: 3,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Carregando convênios...',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: theme.colorScheme.onSurface.withOpacity(0.7),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
+                  return _buildLoadingState(theme);
                 }
 
                 if (controller.companies.isEmpty) {
                   return _buildEmptyState(theme, screenSize);
                 }
 
-                return RefreshIndicator(
-                  onRefresh: () async => await controller.fetchCompanies(),
-                  color: theme.colorScheme.primary,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header com informações
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: screenSize.width * 0.05,
-                          vertical: screenSize.height * 0.02,
-                        ),
-                        child: _buildHeaderInfo(theme, controller.companies.length),
-                      ),
-
-                      // Lista de convênios
-                      ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: screenSize.width * 0.05,
-                        ),
-                        itemCount: controller.companies.length,
-                        itemBuilder: (context, index) {
-                          final company = controller.companies[index];
-                          return _buildModernCompanyCard(context, company, theme, screenSize);
-                        },
-                      ),
-
-                      // Espaço final
-                      SizedBox(height: screenSize.height * 0.1),
-                    ],
-                  ),
-                );
+                return _buildCompaniesContent(controller, theme, screenSize);
               }),
             ),
           ],
@@ -162,31 +43,522 @@ class CompanyListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderInfo(ThemeData theme, int companyCount) {
+  // 🎨 Header Moderno e Minimalista
+  Widget _buildModernHeader(BuildContext context, ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.08),
-            blurRadius: 12,
+            color: const Color(0xFF64748B).withOpacity(0.08),
+            blurRadius: 20,
             offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Título principal com ação
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Convênios',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF0F172A),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Encontre o melhor para você',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: const Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Botão de ajuda sutil
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: IconButton(
+                  onPressed: () => _showHelpBottomSheet(context),
+                  icon: const Icon(
+                    Icons.help_outline_rounded,
+                    color: Color(0xFF475569),
+                    size: 24,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🔄 Estado de carregamento elegante
+  Widget _buildLoadingState(ThemeData theme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF64748B).withOpacity(0.1),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+              strokeWidth: 3,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Carregando convênios...',
+            style: TextStyle(
+              fontSize: 16,
+              color: const Color(0xFF64748B),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 📭 Estado vazio otimizado
+  Widget _buildEmptyState(ThemeData theme, Size screenSize) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFF0F9FF), Color(0xFFE0F2FE)],
+                ),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: const Icon(
+                Icons.business_center_outlined,
+                size: 64,
+                color: Color(0xFF0EA5E9),
+              ),
+            ),
+            const SizedBox(height: 32),
+            Text(
+              'Nenhum convênio encontrado',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF0F172A),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No momento não há convênios disponíveis.\nTente novamente em alguns instantes.',
+              style: TextStyle(
+                fontSize: 16,
+                color: const Color(0xFF64748B),
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => Get.find<CompanyController>().fetchCompanies(),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Tentar Novamente'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3B82F6),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 📋 Conteúdo principal das empresas
+  Widget _buildCompaniesContent(CompanyController controller, ThemeData theme, Size screenSize) {
+    return RefreshIndicator(
+      onRefresh: () async => await controller.fetchCompanies(),
+      color: const Color(0xFF3B82F6),
+      child: CustomScrollView(
+        slivers: [
+          // Estatísticas no topo
+          SliverToBoxAdapter(
+            child: _buildStatsCard(controller.companies.length, theme),
+          ),
+
+          // Grid de convênios
+          SliverPadding(
+            padding: const EdgeInsets.all(24),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                  final company = controller.companies[index];
+                  return _buildCompanyCard(context, company, theme);
+                },
+                childCount: controller.companies.length,
+              ),
+            ),
+          ),
+
+          // Espaço final
+          const SliverToBoxAdapter(
+            child: SizedBox(height: 24),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 📊 Card de estatísticas
+  Widget _buildStatsCard(int companyCount, ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3B82F6).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withOpacity(0.1),
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.analytics_outlined,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$companyCount',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  'Convênios disponíveis para você',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white.withOpacity(0.9),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🏢 Card de empresa reformulado
+  Widget _buildCompanyCard(BuildContext context, CompanyModel company, ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF64748B).withOpacity(0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(24),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () => Get.to(() => CompanyDetailsScreen(company: company)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header com logo e nome
+                Row(
+                  children: [
+                    // Logo moderno
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: const Color(0xFFE2E8F0),
+                          width: 2,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 32,
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        child: company.logoUrl == null
+                            ? const Icon(
+                          Icons.business_outlined,
+                          size: 32,
+                          color: Color(0xFF475569),
+                        )
+                            : ClipOval(
+                          child: Image(
+                            image: ProgressiveImage(company.logoUrl!),
+                            width: 64,
+                            height: 64,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+
+                    // Nome e OAB
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            company.name ?? 'Nome não disponível',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (company.oab != null && company.oab!.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFF16A34A).withOpacity(0.2),
+                                ),
+                              ),
+                              child: Text(
+                                'OAB: ${company.oab}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF15803D),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    // Indicador de ação
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        size: 16,
+                        color: Color(0xFF475569),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Informações de contato em grade
+                _buildInfoGrid(company, theme),
+
+                const SizedBox(height: 20),
+
+                // Valor destacado
+                _buildPriceSection(company, theme),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 📋 Grade de informações
+  Widget _buildInfoGrid(CompanyModel company, ThemeData theme) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildInfoItem(
+            icon: Icons.email_outlined,
+            label: 'E-mail',
+            value: company.email ?? 'Não informado',
+            color: const Color(0xFF3B82F6),
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildInfoItem(
+            icon: Icons.business_outlined,
+            label: 'CNPJ',
+            value: _formatCNPJ(company.cnpj ?? 'Não informado'),
+            color: const Color(0xFF10B981),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 📄 Item de informação individual
+  Widget _buildInfoItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              Icons.apartment_outlined,
-              color: theme.colorScheme.primary,
+              icon,
+              size: 18,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF334155),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 💰 Seção de preço destacada
+  Widget _buildPriceSection(CompanyModel company, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF8FAFC), Color(0xFFE2E8F0)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFCBD5E1),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.monetization_on_outlined,
+              color: Color(0xFF3B82F6),
               size: 24,
             ),
           ),
@@ -196,479 +568,50 @@ class CompanyListScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$companyCount Convênios Disponíveis',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
+                  'Valor mensal',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF64748B),
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Escolha o melhor convênio para suas necessidades',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                  company.monthlyValue != null
+                      ? PagarMeValueUtils.centavosToDisplay(company.monthlyValue!)
+                      : 'Valor a consultar',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(ThemeData theme, Size screenSize) {
-    return Container(
-      height: screenSize.height * 0.6,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          if (company.monthlyValue != null)
             Container(
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
-                shape: BoxShape.circle,
+                color: const Color(0xFF3B82F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                Icons.business_outlined,
-                size: 64,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Nenhum convênio encontrado',
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              constraints: BoxConstraints(maxWidth: screenSize.width * 0.8),
-              child: Text(
-                'No momento não há convênios disponíveis. Tente novamente mais tarde.',
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: () => Get.find<CompanyController>().fetchCompanies(),
-              icon: const Icon(Icons.refresh),
-              label: const Text('Tentar Novamente'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              child: const Text(
+                'Por mês',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF3B82F6),
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModernCompanyCard(BuildContext context, CompanyModel company, ThemeData theme, Size screenSize) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.12),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-            spreadRadius: 0,
-          ),
-        ],
-        border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.08),
-          width: 1,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            Get.to(() => CompanyDetailsScreen(company: company));
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                // Header do card com logo e nome
-                Row(
-                  children: [
-                    // Logo com design moderno e sombra própria
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.colorScheme.primary.withOpacity(0.25),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                            spreadRadius: 0,
-                          ),
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                            spreadRadius: 0,
-                          ),
-                        ],
-                        border: Border.all(
-                          color: theme.colorScheme.primary.withOpacity(0.15),
-                          width: 2,
-                        ),
-                      ),
-                      child: CircleAvatar(
-                        radius: 28,
-                        backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-                        child: company.logoUrl == null
-                            ? Icon(
-                          Icons.business_outlined,
-                          size: 28,
-                          color: theme.colorScheme.primary,
-                        )
-                            : ClipOval(
-                          child: Image(
-                            image: ProgressiveImage(company.logoUrl!),
-                            width: 56,
-                            height: 56,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-
-                    // Nome e informações básicas
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            company.name ?? 'Nome não disponível',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          if (company.oab != null && company.oab!.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    theme.colorScheme.primary.withOpacity(0.15),
-                                    theme.colorScheme.primary.withOpacity(0.08),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: theme.colorScheme.primary.withOpacity(0.2),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                'OAB: ${company.oab}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-
-                    // Ícone de navegação com sombra
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.colorScheme.primary.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // Divisor elegante com gradiente e sombra
-                Container(
-                  height: 2,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.transparent,
-                        theme.colorScheme.primary.withOpacity(0.3),
-                        theme.colorScheme.primary.withOpacity(0.6),
-                        theme.colorScheme.primary.withOpacity(0.3),
-                        Colors.transparent,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.colorScheme.primary.withOpacity(0.3),
-                        blurRadius: 4,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Informações detalhadas em layout discreto
-                Column(
-                  children: [
-                    // Seção de contato
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildEnhancedInfoChip(
-                            icon: Icons.email_outlined,
-                            label: 'E-mail',
-                            value: company.email ?? 'Não informado',
-                            theme: theme,
-                            color: Colors.blue,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildEnhancedInfoChip(
-                            icon: Icons.business_outlined,
-                            label: 'CNPJ',
-                            value: _formatCNPJ(company.cnpj ?? 'Não informado'),
-                            theme: theme,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Valor mensal discreto e elegante
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: theme.colorScheme.primary.withOpacity(0.2),
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: theme.colorScheme.primary.withOpacity(0.06),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          // Ícone sutil
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              Icons.account_balance_wallet_outlined,
-                              color: theme.colorScheme.primary,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-
-                          // Conteúdo principal
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Valor mensal',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  company.monthlyValue != null
-                                      ? PagarMeValueUtils.centavosToDisplay(company.monthlyValue!)
-                                      : 'Valor a consultar',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Indicador sutil de periodicidade
-                          if (company.monthlyValue != null)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.primary.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                'Mensal',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.primary,
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEnhancedInfoChip({
-    required IconData icon,
-    required String label,
-    required String value,
-    required ThemeData theme,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-            spreadRadius: 0,
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-            spreadRadius: 0,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Icon(
-              icon,
-              size: 16,
-              color: color,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: color.withOpacity(0.8),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
   }
 
+  // 🔧 Formatação de CNPJ
   String _formatCNPJ(String cnpj) {
     if (cnpj.length == 14) {
       return '${cnpj.substring(0, 2)}.${cnpj.substring(2, 5)}.${cnpj.substring(5, 8)}/${cnpj.substring(8, 12)}-${cnpj.substring(12)}';
@@ -676,191 +619,187 @@ class CompanyListScreen extends StatelessWidget {
     return cnpj;
   }
 
-  void _showModernHelpDialog(BuildContext context) {
-    final theme = Theme.of(context);
-
-    showGeneralDialog(
+  // ❓ Bottom sheet de ajuda moderno
+  void _showHelpBottomSheet(BuildContext context) {
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: true,
-      barrierLabel: '',
-      barrierColor: Colors.black.withOpacity(0.5),
-      transitionDuration: const Duration(milliseconds: 300),
-      pageBuilder: (context, anim1, anim2) => const SizedBox.shrink(),
-      transitionBuilder: (context, animation, secondaryAnimation, child) {
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-          )),
-          child: Dialog(
-            backgroundColor: Colors.transparent,
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
+            children: [
+              // Handle indicator fixo
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 48,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E8F0),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Ícone hero
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.colorScheme.primary,
-                          theme.colorScheme.primary.withOpacity(0.8),
-                        ],
+
+              // Conteúdo scrollável
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    children: [
+                      // Ícone e título
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+                          ),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: const Icon(
+                          Icons.lightbulb_outline_rounded,
+                          color: Colors.white,
+                          size: 32,
+                        ),
                       ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.colorScheme.primary.withOpacity(0.3),
-                          blurRadius: 12,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.help_center_outlined,
-                      size: 32,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
+                      const SizedBox(height: 24),
 
-                  // Título
-                  Text(
-                    "Como escolher um convênio?",
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Conteúdo informativo
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildHelpItem(
-                          icon: Icons.search_outlined,
-                          text: "Analise os valores mensais e benefícios oferecidos",
-                          theme: theme,
+                      const Text(
+                        'Como escolher um convênio?',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A),
                         ),
-                        const SizedBox(height: 12),
-                        _buildHelpItem(
-                          icon: Icons.verified_outlined,
-                          text: "Verifique a OAB e credenciais do escritório",
-                          theme: theme,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildHelpItem(
-                          icon: Icons.contact_page_outlined,
-                          text: "Entre em contato para esclarecer dúvidas",
-                          theme: theme,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildHelpItem(
-                          icon: Icons.gavel_outlined,
-                          text: "Escolha o convênio que melhor atende suas necessidades jurídicas",
-                          theme: theme,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Botão de ação
-                  Container(
-                    width: double.infinity,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.colorScheme.primary,
-                          theme.colorScheme.primary.withOpacity(0.8),
-                        ],
+                        textAlign: TextAlign.center,
                       ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () => Navigator.of(context).pop(),
-                        child: Center(
-                          child: Text(
-                            "Entendi",
+                      const SizedBox(height: 32),
+
+                      // Dicas
+                      ..._buildHelpItems(),
+
+                      const SizedBox(height: 32),
+
+                      // Botão de fechamento
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3B82F6),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Entendi',
                             style: TextStyle(
-                              color: Colors.white,
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ),
-                    ),
+
+                      // Espaço seguro na parte inferior
+                      SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildHelpItem({
-    required IconData icon,
-    required String text,
-    required ThemeData theme,
-  }) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            icon,
-            size: 16,
-            color: theme.colorScheme.primary,
-          ),
+  // 💡 Items de ajuda
+  List<Widget> _buildHelpItems() {
+    final items = [
+      {
+        'icon': Icons.search_rounded,
+        'title': 'Analise os valores',
+        'subtitle': 'Compare preços e benefícios oferecidos por cada convênio',
+      },
+      {
+        'icon': Icons.verified_rounded,
+        'title': 'Verifique credenciais',
+        'subtitle': 'Confirme a OAB e reputação do escritório jurídico',
+      },
+      {
+        'icon': Icons.contact_page_rounded,
+        'title': 'Entre em contato',
+        'subtitle': 'Tire dúvidas diretamente com o escritório antes de decidir',
+      },
+      {
+        'icon': Icons.gavel_rounded,
+        'title': 'Escolha o ideal',
+        'subtitle': 'Selecione o convênio que melhor atende suas necessidades',
+      },
+    ];
+
+    return items.map((item) => Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.8),
-              height: 1.4,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF3B82F6).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              item['icon'] as IconData,
+              color: const Color(0xFF3B82F6),
+              size: 20,
             ),
           ),
-        ),
-      ],
-    );
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item['title'] as String,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item['subtitle'] as String,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: const Color(0xFF64748B),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    )).toList();
   }
 }

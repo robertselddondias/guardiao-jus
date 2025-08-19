@@ -36,7 +36,9 @@ class CompanyRepository {
   /// Lista todas as empresas.
   Future<List<CompanyModel>> getAllCompanies() async {
     try {
-      QuerySnapshot query = await _firestore.collection(collectionPath).get();
+      QuerySnapshot query = await _firestore.collection(collectionPath)
+          .where("isActive", isEqualTo: true)
+          .get();
 
       return query.docs.map((doc) {
         return CompanyModel.fromMap(doc.data() as Map<String, dynamic>);

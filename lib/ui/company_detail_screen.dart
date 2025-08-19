@@ -785,237 +785,687 @@ class CompanyDetailsScreen extends StatelessWidget {
 
   void _showModernConfirmationDialog(BuildContext context) {
     final theme = Theme.of(context);
+    final screenSize = MediaQuery.of(context).size;
+    final isTablet = screenSize.width > 600;
+    final isLandscape = screenSize.width > screenSize.height;
     bool isChecked = false;
 
-    showDialog(
+    // Definindo dimensões responsivas
+    final dialogMaxWidth = isTablet ? 500.0 : screenSize.width * 0.9;
+    final dialogMaxHeight = isLandscape ? screenSize.height * 0.9 : null;
+
+    // Paddings responsivos
+    final basePadding = isTablet ? 32.0 : 20.0;
+    final smallPadding = isTablet ? 20.0 : 16.0;
+    final largePadding = isTablet ? 40.0 : 24.0;
+
+    // Tamanhos de fonte responsivos
+    final headlineSize = isTablet ? 26.0 : 22.0;
+    final bodySize = isTablet ? 16.0 : 14.0;
+    final buttonHeight = isTablet ? 60.0 : 52.0;
+
+    showGeneralDialog(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return Dialog(
-              backgroundColor: Colors.transparent,
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
-                      blurRadius: 24,
-                      offset: const Offset(0, 12),
+      barrierColor: Colors.black.withOpacity(0.7),
+      transitionDuration: const Duration(milliseconds: 350),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return const SizedBox.shrink();
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return ScaleTransition(
+          scale: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutBack,
+          ),
+          child: FadeTransition(
+            opacity: animation,
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                return Center(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: dialogMaxWidth,
+                      maxHeight: dialogMaxHeight ?? screenSize.height * 0.95,
                     ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Header com ícone
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.handshake_outlined,
-                        color: theme.colorScheme.primary,
-                        size: 32,
-                      ),
+                    margin: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 40 : 16,
+                      vertical: isLandscape ? 20 : 40,
                     ),
-                    const SizedBox(height: 20),
-
-                    // Título
-                    Text(
-                      'Confirmação de Contrato',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Descrição
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Ao confirmar, você estará assinando o contrato com este escritório e concordando com os termos do aplicativo.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.8),
-                          height: 1.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Valor em destaque
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            theme.colorScheme.primary.withOpacity(0.1),
-                            theme.colorScheme.primary.withOpacity(0.05),
+                    child: Dialog(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      insetPadding: EdgeInsets.zero,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(isTablet ? 32 : 24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.25),
+                              blurRadius: isTablet ? 40 : 32,
+                              offset: Offset(0, isTablet ? 20 : 16),
+                              spreadRadius: -4,
+                            ),
+                            BoxShadow(
+                              color: theme.colorScheme.primary.withOpacity(0.15),
+                              blurRadius: isTablet ? 24 : 20,
+                              offset: Offset(0, isTablet ? 12 : 8),
+                              spreadRadius: 0,
+                            ),
+                            BoxShadow(
+                              color: Colors.white.withOpacity(0.1),
+                              blurRadius: 1,
+                              offset: const Offset(0, -1),
+                              spreadRadius: 0,
+                            ),
                           ],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: theme.colorScheme.primary.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.attach_money,
-                            color: theme.colorScheme.primary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Valor mensal: ${PagarMeValueUtils.centavosToDisplay(controller.company.value.monthlyValue!)}',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Checkbox de concordância
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: theme.colorScheme.outline.withOpacity(0.2),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Transform.scale(
-                            scale: 1.2,
-                            child: Checkbox(
-                              value: isChecked,
-                              activeColor: theme.colorScheme.primary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              onChanged: (value) {
-                                setState(() {
-                                  isChecked = value ?? false;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Li e concordo com o contrato e os termos do aplicativo.',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurface.withOpacity(0.8),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // Botões de ação
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: 48,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: theme.colorScheme.outline.withOpacity(0.3),
-                                width: 1,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: TextButton(
-                              onPressed: () {
-                                Navigator.pop(dialogContext);
-                              },
-                              style: TextButton.styleFrom(
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: Text(
-                                'Cancelar',
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  color: theme.colorScheme.onSurface.withOpacity(0.7),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
+                          border: Border.all(
+                            color: theme.colorScheme.outline.withOpacity(0.08),
+                            width: 1,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Container(
-                            height: 48,
-                            decoration: BoxDecoration(
-                              gradient: isChecked
-                                  ? LinearGradient(
-                                colors: [
-                                  theme.colorScheme.primary,
-                                  theme.colorScheme.primary.withOpacity(0.8),
-                                ],
-                              )
-                                  : null,
-                              color: isChecked ? null : theme.colorScheme.outline.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              borderRadius: BorderRadius.circular(12),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: isChecked
-                                    ? () {
-                                  Navigator.pop(dialogContext);
-                                  controller.confirmContract();
-                                }
-                                    : null,
-                                child: Center(
-                                  child: Text(
-                                    'Confirmar',
-                                    style: theme.textTheme.titleMedium?.copyWith(
-                                      color: isChecked ? Colors.white : theme.colorScheme.onSurface.withOpacity(0.4),
-                                      fontWeight: FontWeight.bold,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(isTablet ? 32 : 24),
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // 🎯 Header responsivo com design glassmorphism
+                                Container(
+                                  width: double.infinity,
+                                  padding: EdgeInsets.fromLTRB(
+                                      basePadding,
+                                      largePadding,
+                                      basePadding,
+                                      smallPadding
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        theme.colorScheme.primary.withOpacity(0.08),
+                                        theme.colorScheme.primary.withOpacity(0.03),
+                                      ],
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
                                     ),
                                   ),
+                                  child: Column(
+                                    children: [
+                                      // Ícone responsivo com efeito premium
+                                      Container(
+                                        padding: EdgeInsets.all(isTablet ? 24 : 18),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              theme.colorScheme.primary,
+                                              theme.colorScheme.secondary,
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ),
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: theme.colorScheme.primary.withOpacity(0.4),
+                                              blurRadius: isTablet ? 20 : 16,
+                                              offset: Offset(0, isTablet ? 10 : 8),
+                                              spreadRadius: 0,
+                                            ),
+                                            BoxShadow(
+                                              color: Colors.white.withOpacity(0.2),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, -2),
+                                              spreadRadius: 0,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Icon(
+                                          Icons.verified_user_rounded,
+                                          color: Colors.white,
+                                          size: isTablet ? 40 : 32,
+                                        ),
+                                      ),
+                                      SizedBox(height: isTablet ? 24 : 20),
+
+                                      // Título responsivo com tipografia refinada
+                                      Text(
+                                        'Confirmação de Contrato',
+                                        style: theme.textTheme.headlineSmall?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: theme.colorScheme.onSurface,
+                                          letterSpacing: -0.5,
+                                          height: 1.2,
+                                          fontSize: headlineSize,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      SizedBox(height: isTablet ? 16 : 12),
+
+                                      // Subtítulo elegante
+                                      Text(
+                                        'Você está prestes a assinar um novo contrato',
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                                          fontWeight: FontWeight.w500,
+                                          letterSpacing: 0.2,
+                                          fontSize: bodySize,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
+
+                                // 🎯 Conteúdo principal responsivo
+                                Padding(
+                                  padding: EdgeInsets.all(basePadding),
+                                  child: Column(
+                                    children: [
+                                      // Descrição em card elegante
+                                      Container(
+                                        width: double.infinity,
+                                        padding: EdgeInsets.all(smallPadding),
+                                        decoration: BoxDecoration(
+                                          color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                                          borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
+                                          border: Border.all(
+                                            color: theme.colorScheme.outline.withOpacity(0.1),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            Icon(
+                                              Icons.info_outline_rounded,
+                                              color: theme.colorScheme.primary.withOpacity(0.8),
+                                              size: isTablet ? 24 : 20,
+                                            ),
+                                            SizedBox(height: isTablet ? 16 : 12),
+                                            Text(
+                                              'Ao confirmar, você estará assinando o contrato com este escritório e concordando com os termos do aplicativo.',
+                                              style: theme.textTheme.bodyMedium?.copyWith(
+                                                color: theme.colorScheme.onSurface.withOpacity(0.8),
+                                                height: 1.6,
+                                                fontWeight: FontWeight.w500,
+                                                fontSize: bodySize,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SizedBox(height: isTablet ? 32 : 24),
+
+                                      // 🎯 Valor mensal responsivo com design premium
+                                      Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          // Primeiro objeto: Título
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: isTablet ? 24 : 20,
+                                                vertical: isTablet ? 16 : 12
+                                            ),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  theme.colorScheme.primary.withOpacity(0.08),
+                                                  theme.colorScheme.primary.withOpacity(0.03),
+                                                ],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ),
+                                              borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
+                                              border: Border.all(
+                                                color: theme.colorScheme.primary.withOpacity(0.15),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  padding: EdgeInsets.all(isTablet ? 12 : 8),
+                                                  decoration: BoxDecoration(
+                                                    color: theme.colorScheme.primary.withOpacity(0.15),
+                                                    borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.payments_rounded,
+                                                    color: theme.colorScheme.primary,
+                                                    size: isTablet ? 20 : 16,
+                                                  ),
+                                                ),
+                                                SizedBox(width: isTablet ? 16 : 12),
+                                                Text(
+                                                  'Valor Mensal',
+                                                  style: theme.textTheme.titleSmall?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: theme.colorScheme.primary,
+                                                    letterSpacing: 0.5,
+                                                    fontSize: isTablet ? 16 : 14,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+
+                                          SizedBox(height: isTablet ? 16 : 12),
+
+                                          // Segundo objeto: Valor
+                                          Container(
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: isTablet ? 28 : 20,
+                                                vertical: isTablet ? 20 : 16
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: theme.colorScheme.surface,
+                                              borderRadius: BorderRadius.circular(isTablet ? 24 : 18),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withOpacity(0.08),
+                                                  blurRadius: isTablet ? 20 : 16,
+                                                  offset: Offset(0, isTablet ? 8 : 6),
+                                                  spreadRadius: 0,
+                                                ),
+                                              ],
+                                              border: Border.all(
+                                                color: theme.colorScheme.outline.withOpacity(0.08),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Container(
+                                                  width: isTablet ? 4 : 3,
+                                                  height: isTablet ? 32 : 24,
+                                                  decoration: BoxDecoration(
+                                                    gradient: LinearGradient(
+                                                      colors: [
+                                                        theme.colorScheme.primary,
+                                                        theme.colorScheme.secondary,
+                                                      ],
+                                                      begin: Alignment.topCenter,
+                                                      end: Alignment.bottomCenter,
+                                                    ),
+                                                    borderRadius: BorderRadius.circular(2),
+                                                  ),
+                                                ),
+                                                SizedBox(width: isTablet ? 20 : 16),
+                                                Flexible(
+                                                  child: Text(
+                                                    PagarMeValueUtils.centavosToDisplay(controller.company.value.monthlyValue!),
+                                                    style: theme.textTheme.titleLarge?.copyWith(
+                                                      fontWeight: FontWeight.w700,
+                                                      color: theme.colorScheme.primary,
+                                                      fontSize: isTablet ? 32 : 24,
+                                                      letterSpacing: -0.5,
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      SizedBox(height: isTablet ? 36 : 28),
+
+                                      // 🎯 Checkbox responsivo de concordância
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            isChecked = !isChecked;
+                                          });
+                                        },
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 200),
+                                          padding: EdgeInsets.all(isTablet ? 24 : 20),
+                                          decoration: BoxDecoration(
+                                            color: isChecked
+                                                ? theme.colorScheme.primary.withOpacity(0.08)
+                                                : theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                                            borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
+                                            border: Border.all(
+                                              color: isChecked
+                                                  ? theme.colorScheme.primary.withOpacity(0.3)
+                                                  : theme.colorScheme.outline.withOpacity(0.2),
+                                              width: isChecked ? 2 : 1,
+                                            ),
+                                            boxShadow: isChecked ? [
+                                              BoxShadow(
+                                                color: theme.colorScheme.primary.withOpacity(0.15),
+                                                blurRadius: isTablet ? 12 : 8,
+                                                offset: Offset(0, isTablet ? 6 : 4),
+                                              ),
+                                            ] : null,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              AnimatedContainer(
+                                                duration: const Duration(milliseconds: 200),
+                                                width: isTablet ? 28 : 24,
+                                                height: isTablet ? 28 : 24,
+                                                decoration: BoxDecoration(
+                                                  color: isChecked
+                                                      ? theme.colorScheme.primary
+                                                      : Colors.transparent,
+                                                  borderRadius: BorderRadius.circular(isTablet ? 8 : 6),
+                                                  border: Border.all(
+                                                    color: isChecked
+                                                        ? theme.colorScheme.primary
+                                                        : theme.colorScheme.outline.withOpacity(0.5),
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                                child: isChecked
+                                                    ? Icon(
+                                                  Icons.check_rounded,
+                                                  size: isTablet ? 18 : 16,
+                                                  color: Colors.white,
+                                                )
+                                                    : null,
+                                              ),
+                                              SizedBox(width: isTablet ? 20 : 16),
+                                              Expanded(
+                                                child: Text(
+                                                  'Li e concordo com o contrato e os termos do aplicativo.',
+                                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                                    color: theme.colorScheme.onSurface.withOpacity(0.9),
+                                                    fontWeight: FontWeight.w500,
+                                                    height: 1.4,
+                                                    fontSize: bodySize,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // 🎯 Rodapé responsivo com botões
+                                Container(
+                                  width: double.infinity,
+                                  padding: EdgeInsets.fromLTRB(basePadding, 0, basePadding, basePadding),
+                                  child: Column(
+                                    children: [
+                                      // Divider sutil
+                                      Container(
+                                        height: 1,
+                                        margin: EdgeInsets.only(bottom: isTablet ? 32 : 24),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors.transparent,
+                                              theme.colorScheme.outline.withOpacity(0.2),
+                                              Colors.transparent,
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+
+                                      // Layout responsivo de botões
+                                      isLandscape && !isTablet
+                                          ? Row(
+                                        children: [
+                                          // Botão Cancelar
+                                          Expanded(
+                                            child: _buildCancelButton(context, theme, buttonHeight, bodySize),
+                                          ),
+                                          SizedBox(width: isTablet ? 20 : 16),
+                                          // Botão Confirmar
+                                          Expanded(
+                                            flex: 2,
+                                            child: _buildConfirmButton(context, theme, isChecked, buttonHeight, bodySize),
+                                          ),
+                                        ],
+                                      )
+                                          : Column(
+                                        children: [
+                                          // Botão Confirmar (principal)
+                                          _buildConfirmButton(context, theme, isChecked, buttonHeight, bodySize),
+                                          SizedBox(height: isTablet ? 16 : 12),
+                                          // Botão Cancelar (secundário)
+                                          _buildCancelButton(context, theme, buttonHeight - 8, bodySize),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            );
-          },
+                  ),
+                );
+              },
+            ),
+          ),
         );
       },
+    );
+  }
+
+// Widget para botão de confirmação
+  // 🎯 Botão de confirmação moderno e elegante
+  Widget _buildConfirmButton(BuildContext context, ThemeData theme, bool isChecked, double height, double fontSize) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      width: double.infinity,
+      height: height,
+      decoration: BoxDecoration(
+        gradient: isChecked
+            ? const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF3B82F6), // Azul moderno
+            Color(0xFF1D4ED8), // Azul mais escuro
+          ],
+        )
+            : const LinearGradient(
+          colors: [
+            Color(0xFFF1F5F9), // Cinza claro neutro
+            Color(0xFFE2E8F0), // Cinza um pouco mais escuro
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isChecked
+              ? const Color(0xFF3B82F6).withOpacity(0.3)
+              : const Color(0xFFCBD5E1),
+          width: isChecked ? 2 : 1,
+        ),
+        boxShadow: isChecked ? [
+          BoxShadow(
+            color: const Color(0xFF3B82F6).withOpacity(0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: const Color(0xFF3B82F6).withOpacity(0.1),
+            blurRadius: 40,
+            offset: const Offset(0, 16),
+            spreadRadius: 0,
+          ),
+        ] : [
+          BoxShadow(
+            color: const Color(0xFF64748B).withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: isChecked
+              ? () {
+            Navigator.pop(context);
+            controller.confirmContract();
+          }
+              : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Ícone animado
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  padding: EdgeInsets.all(isChecked ? 8 : 0),
+                  decoration: isChecked ? BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ) : null,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: isChecked
+                        ? Icon(
+                      Icons.check_circle_rounded,
+                      key: const ValueKey('checked'),
+                      color: Colors.white,
+                      size: fontSize + 4,
+                    )
+                        : Icon(
+                      Icons.lock_outline_rounded,
+                      key: const ValueKey('unchecked'),
+                      color: const Color(0xFF94A3B8),
+                      size: fontSize + 4,
+                    ),
+                  ),
+                ),
+
+                if (isChecked) const SizedBox(width: 12),
+
+                // Texto principal
+                Flexible(
+                  child: AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 200),
+                    style: TextStyle(
+                      color: isChecked
+                          ? Colors.white
+                          : const Color(0xFF94A3B8),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                      fontSize: fontSize,
+                      height: 1.2,
+                    ),
+                    child: const Text(
+                      'Confirmar Contrato',
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+
+                // Indicador de estado
+                if (isChecked) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+// 🚫 Botão de cancelamento moderno e sutil
+  Widget _buildCancelButton(BuildContext context, ThemeData theme, double height, double fontSize) {
+    return Container(
+      width: double.infinity,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF64748B).withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          splashColor: const Color(0xFFF1F5F9),
+          highlightColor: const Color(0xFFF8FAFC),
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Ícone sutil
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: const Color(0xFF64748B),
+                    size: fontSize,
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                // Texto do botão
+                Flexible(
+                  child: Text(
+                    'Cancelar',
+                    style: TextStyle(
+                      color: const Color(0xFF475569),
+                      fontWeight: FontWeight.w600,
+                      fontSize: fontSize,
+                      letterSpacing: 0.2,
+                      height: 1.2,
+                    ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
